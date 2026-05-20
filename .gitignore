@@ -1,0 +1,20 @@
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+frontend/.DS_Store
+
+# Backend
+backend/__pycache__/
+backend/*.pyc
+backend/.pytest_cache/
+backend/venv/
+backend/env/
+backend/.env
+
+# Database
+db_data/
+
+# OS
+.DS_Store
+Thumbs.db
