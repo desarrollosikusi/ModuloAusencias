@@ -628,7 +628,7 @@ function App() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {solicitudesAdmin.length > 0 ? solicitudesAdmin.map((s, i) => {
+                    {solicitudesAdmin.filter(s => s.estado !== 'Gestionado').length > 0 ? solicitudesAdmin.filter(s => s.estado !== 'Gestionado').map((s, i) => {
                       const dias = s.diasHabiles !== undefined ? s.diasHabiles : 0;
                       return (
                       <tr key={i} className="hover:bg-slate-50 transition">

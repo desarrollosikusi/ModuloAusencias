@@ -82,8 +82,8 @@ export default function BandejaCompras({ solicitudes, perfilActual, onSolicitudA
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {solicitudes.length > 0 ? (
-                solicitudes.map((sol, index) => {
+              {solicitudes.filter(s => s.estado !== 'Gestionado').length > 0 ? (
+                solicitudes.filter(s => s.estado !== 'Gestionado').map((sol, index) => {
                   // Mockeando días para demostración visual si no viene definido
                   const dias = sol.diasHabiles !== undefined ? sol.diasHabiles : 0; 
                   

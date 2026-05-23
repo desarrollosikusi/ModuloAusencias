@@ -64,6 +64,7 @@ class SolicitudAdminResponse(BaseModel):
     gestor: Optional[str] = None
     diasHabiles: int
     rutaCotizacion: Optional[str] = None
+    fechaCierre: Optional[str] = None
     
     # Nuevos campos de gestión
     fechaOrdenCompra: Optional[str] = None
@@ -155,6 +156,7 @@ def crear_solicitud_admin(
         "gestor": db_solicitud.gestor,
         "diasHabiles": calcular_dias_habiles(db_solicitud.fecha_creacion),
         "rutaCotizacion": db_solicitud.ruta_cotizacion,
+        "fechaCierre": str(db_solicitud.fecha_cierre) if db_solicitud.fecha_cierre else None,
         "fechaOrdenCompra": str(db_solicitud.fecha_orden_compra) if db_solicitud.fecha_orden_compra else None,
         "ordenCompra": db_solicitud.orden_compra,
         "valorFinal": db_solicitud.valor_final,
@@ -181,6 +183,7 @@ def gestionar_solicitud(solicitud_id: int, datos: SolicitudAdminGestionar, db: S
     solicitud.cisco_so = datos.cisco_so
     solicitud.cisco_web_order_final = datos.cisco_web_order_final
     solicitud.estado = "Gestionado"
+    solicitud.fecha_cierre = datetime.utcnow()
 
     db.commit()
     db.refresh(solicitud)
@@ -202,6 +205,7 @@ def gestionar_solicitud(solicitud_id: int, datos: SolicitudAdminGestionar, db: S
         "gestor": solicitud.gestor,
         "diasHabiles": calcular_dias_habiles(solicitud.fecha_creacion),
         "rutaCotizacion": solicitud.ruta_cotizacion,
+        "fechaCierre": str(solicitud.fecha_cierre) if solicitud.fecha_cierre else None,
         "fechaOrdenCompra": str(solicitud.fecha_orden_compra) if solicitud.fecha_orden_compra else None,
         "ordenCompra": solicitud.orden_compra,
         "valorFinal": solicitud.valor_final,
@@ -233,6 +237,7 @@ def get_solicitudes_admin(db: Session = Depends(get_db)):
             "gestor": sol.gestor,
             "diasHabiles": calcular_dias_habiles(sol.fecha_creacion),
             "rutaCotizacion": sol.ruta_cotizacion,
+            "fechaCierre": str(sol.fecha_cierre) if sol.fecha_cierre else None,
             "fechaOrdenCompra": str(sol.fecha_orden_compra) if sol.fecha_orden_compra else None,
             "ordenCompra": sol.orden_compra,
             "valorFinal": sol.valor_final,

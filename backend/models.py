@@ -24,6 +24,7 @@ class SolicitudAdministrativaDB(Base):
     fecha_creacion = Column(DateTime, default=datetime.utcnow)
 
     # Campos de Gestión (Llenados por el Gestor Financiero)
+    fecha_cierre = Column(DateTime, nullable=True)
     fecha_orden_compra = Column(DateTime, nullable=True)
     orden_compra = Column(String(8), nullable=True)
     valor_final = Column(Float, nullable=True)
