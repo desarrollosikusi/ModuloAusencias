@@ -77,12 +77,18 @@ function App() {
       setCurrentModule('ausencias');
       setActiveTab('dashboard');
     }
-  }, [intranet]);
+    if (intranet === 'Financiera' && !getRolesForIntranet().includes(perfil)) {
+      setPerfil('Director Financiero');
+    }
+  }, [intranet, perfil]);
 
+  const isFuncionario = perfil === 'Funcionario' || perfil.startsWith('Gestor') || perfil === 'Director Financiero';
+  const isLider = perfil === 'Líder' || perfil === 'Director Financiero';
+
+  // Sincronizar las pestañas por defecto
   useEffect(() => {
-    // Sincronizar módulos según el rol y la pestaña activa
     if (intranet === 'Operaciones') {
-      if (currentModule === 'ausencias') setActiveTab(perfil === 'Funcionario' ? 'dashboard' : 'aprobaciones');
+      if (currentModule === 'ausencias') setActiveTab(isFuncionario ? 'dashboard' : 'aprobaciones');
       if (currentModule === 'administrativa') setActiveTab('mis-solicitudes');
     } else {
       // Financiera: por ahora dejamos un fallback simple o dashboard genérico
@@ -238,7 +244,7 @@ function App() {
                 {currentModule === 'financiera' && 'Módulo de Gestión Financiera'}
               </h2>
               <p className="text-slate-500 mt-1 text-sm">
-                {perfil === 'Funcionario' || intranet === 'Financiera'
+                {isFuncionario
                   ? 'Gestiona tus solicitudes y visibilidad del equipo operativo.' 
                   : 'Administra y supervisa los requerimientos operativos de tu equipo.'}
               </p>
@@ -258,14 +264,14 @@ function App() {
           {/* Navegación por Pestañas (Tabs) */}
           <div className="flex gap-2 mt-6 overflow-x-auto">
             {/* Tabs Ausencias */}
-            {currentModule === 'ausencias' && perfil === 'Funcionario' && (
+            {currentModule === 'ausencias' && isFuncionario && (
               <>
                 <button onClick={() => setActiveTab('dashboard')} className={`px-5 py-2.5 font-medium text-sm rounded-t-lg transition-all flex items-center gap-2 ${activeTab === 'dashboard' ? 'bg-slate-50 text-blue-700 border-t border-l border-r border-slate-200' : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50/80'}`}><LayoutDashboard size={18}/> Dashboard Ausencias</button>
                 <button onClick={() => setActiveTab('solicitar')} className={`px-5 py-2.5 font-medium text-sm rounded-t-lg transition-all flex items-center gap-2 ${activeTab === 'solicitar' ? 'bg-slate-50 text-blue-700 border-t border-l border-r border-slate-200' : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50/80'}`}><FileText size={18}/> Solicitar Ausencia</button>
                 <button onClick={() => setActiveTab('mis-solicitudes')} className={`px-5 py-2.5 font-medium text-sm rounded-t-lg transition-all flex items-center gap-2 ${activeTab === 'mis-solicitudes' ? 'bg-slate-50 text-blue-700 border-t border-l border-r border-slate-200' : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50/80'}`}><Clock size={18}/> Mis Solicitudes</button>
               </>
             )}
-            {currentModule === 'ausencias' && perfil === 'Líder' && (
+            {currentModule === 'ausencias' && isLider && (
               <button onClick={() => setActiveTab('aprobaciones')} className={`px-5 py-2.5 font-medium text-sm rounded-t-lg transition-all flex items-center gap-2 bg-slate-50 text-blue-700 border-t border-l border-r border-slate-200`}><CheckCircle size={18}/> Bandeja de Aprobaciones</button>
             )}
 
@@ -286,7 +292,7 @@ function App() {
           {/* VISTAS FUNCIONARIO */}
           
           {/* DASHBOARD AUSENCIAS (VISTA DE EQUIPO) */}
-          {currentModule === 'ausencias' && perfil === 'Funcionario' && activeTab === 'dashboard' && (
+          {currentModule === 'ausencias' && isFuncionario && activeTab === 'dashboard' && (
             <div className="max-w-6xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-6">
               
               <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -370,8 +376,8 @@ function App() {
             </div>
           )}
 
-          {/* SOLICITAR AUSENCIA */}
-          {currentModule === 'ausencias' && perfil === 'Funcionario' && activeTab === 'solicitar' && (
+          {/* FORMULARIO DE SOLICITUD */}
+          {currentModule === 'ausencias' && isFuncionario && activeTab === 'solicitar' && (
             <div className="max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
                <FormularioAusencia 
                 onCancel={() => setActiveTab('mis-solicitudes')} 
@@ -385,7 +391,7 @@ function App() {
           )}
 
           {/* MIS SOLICITUDES (CON KPIs) */}
-          {currentModule === 'ausencias' && perfil === 'Funcionario' && activeTab === 'mis-solicitudes' && (
+          {currentModule === 'ausencias' && isFuncionario && activeTab === 'mis-solicitudes' && (
             <div className="space-y-6 max-w-6xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
               
               {/* KPIs Propios */}
@@ -478,7 +484,7 @@ function App() {
           )}
 
           {/* VISTAS LIDER */}
-          {currentModule === 'ausencias' && perfil === 'Líder' && activeTab === 'aprobaciones' && (
+          {currentModule === 'ausencias' && isLider && activeTab === 'aprobaciones' && (
             <div className="max-w-7xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
                 <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between border-l-4 border-l-yellow-400">
