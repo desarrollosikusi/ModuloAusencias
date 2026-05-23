@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { CreditCard, CheckCircle, Clock, LayoutDashboard, List } from 'lucide-react';
 import ModalDetalleSolicitud from './ModalDetalleSolicitud';
 import ModalGestionarSolicitud from './ModalGestionarSolicitud';
+import DashboardCompras from './DashboardCompras';
 
 export default function BandejaCompras({ solicitudes, perfilActual, onSolicitudActualizada }) {
   const [activeTab, setActiveTab] = useState('bandeja'); // 'bandeja' o 'dashboard'
@@ -137,11 +138,7 @@ export default function BandejaCompras({ solicitudes, perfilActual, onSolicitudA
       )}
 
       {activeTab === 'dashboard' && (
-        <div className="bg-white p-12 rounded-xl border border-slate-200 shadow-sm text-center animate-in fade-in duration-300">
-           <LayoutDashboard size={64} className="mx-auto text-slate-300 mb-4"/>
-           <h3 className="text-2xl font-bold text-slate-700">Dashboard de Compras</h3>
-           <p className="text-slate-500 mt-2 max-w-md mx-auto">Aquí se visualizarán las métricas de compras, tiempos de ciclo y eficiencia de los gestores.</p>
-        </div>
+        <DashboardCompras solicitudes={solicitudes} />
       )}
 
       <ModalDetalleSolicitud 
