@@ -1,10 +1,21 @@
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, Field
+import os
+import shutil
+from datetime import date, datetime, timedelta
 from typing import List, Optional
-from datetime import date
 
-app = FastAPI(title="Gestión de Ausencias Laborales API")
+from fastapi import FastAPI, UploadFile, File, Form, Depends
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+from sqlalchemy.orm import Session
+import holidays
+
+from database import engine, Base, get_db
+from models import SolicitudAdministrativaDB
+
+# Crear tablas en BD
+Base.metadata.create_all(bind=engine)
+
+app = FastAPI(title="Gestión Administrativa y Ausencias API")
 
 app.add_middleware(
     CORSMiddleware,
@@ -14,69 +25,140 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-class ResponsableBackup(BaseModel):
-    nombre: str
-    correo: str
-    gestion: str
+# Utilidad para calcular días hábiles (Lunes-Viernes, sin festivos en Colombia)
+co_holidays = holidays.Colombia()
 
-class AusenciaCreate(BaseModel):
-    tipo_ausencia: str
-    fecha_inicio: date
-    fecha_fin: date
-    hora_inicio: Optional[str] = None
-    hora_fin: Optional[str] = None
-    dia_completo: bool
-    incluye_no_habiles: bool
-    motivo: str
-    observaciones: Optional[str] = None
-    cantidad_responsables: int
-    responsables_backup: List[ResponsableBackup]
-    actividades_criticas: List[str]
-    tiene_pendientes: bool
-    descripcion_pendientes: Optional[str] = None
-    archivo_adjunto: Optional[str] = None
+def calcular_dias_habiles(fecha_inicio: datetime) -> int:
+    # Si acaba de ser creada, son 0 días
+    if not fecha_inicio:
+        return 0
+    dias_habiles = 0
+    fecha_actual = fecha_inicio.date()
+    hoy = datetime.utcnow().date()
+    
+    while fecha_actual < hoy:
+        # 5 es Sábado, 6 es Domingo
+        if fecha_actual.weekday() < 5 and fecha_actual not in co_holidays:
+            dias_habiles += 1
+        fecha_actual += timedelta(days=1)
+        
+    return dias_habiles
 
-class Ausencia(AusenciaCreate):
+# ---------------------------------------------------------
+# Pydantic Schemas
+# ---------------------------------------------------------
+class SolicitudAdminResponse(BaseModel):
     id: int
-    usuario: str
-    rol: str
-    estado: str = "PENDIENTE"
-    riesgo: str = "BAJO"
+    tipoSolicitud: str
+    tipoCompra: Optional[str] = None
+    pep: Optional[str] = None
+    ceco: Optional[str] = None
+    proveedor: Optional[str] = None
+    monto: Optional[float] = None
+    moneda: Optional[str] = None
+    compraPlaneada: Optional[str] = None
+    observaciones: Optional[str] = None
+    webOrder: Optional[str] = None
+    dealId: Optional[str] = None
+    estado: str
+    gestor: Optional[str] = None
+    diasHabiles: int
+    rutaCotizacion: Optional[str] = None
+    
+    class Config:
+        from_attributes = True
 
-# Mock database
-mock_ausencias = [
-    Ausencia(
-        id=1, 
-        usuario="Juan Perez", 
-        rol="Operador",
-        tipo_ausencia="Vacaciones", 
-        fecha_inicio=date(2023, 10, 1), 
-        fecha_fin=date(2023, 10, 15), 
-        dia_completo=True,
-        incluye_no_habiles=True,
-        motivo="Vacaciones anuales",
-        cantidad_responsables=1,
-        responsables_backup=[ResponsableBackup(nombre="Pedro Gómez", correo="pedro@corphr.com", gestion="Atención de tickets prioritarios")],
-        actividades_criticas=["Soporte"],
-        tiene_pendientes=False,
-        estado="PENDIENTE", 
-        riesgo="BAJO"
+# Directorio de subida de archivos (Volumen persistente de Docker)
+UPLOAD_DIR = "/app/uploads"
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+# ---------------------------------------------------------
+# Endpoints Gestión Administrativa
+# ---------------------------------------------------------
+
+@app.post("/api/administrativa", response_model=SolicitudAdminResponse)
+def crear_solicitud_admin(
+    tipoSolicitud: str = Form(...),
+    tipoCompra: Optional[str] = Form(None),
+    pep: Optional[str] = Form(None),
+    ceco: Optional[str] = Form(None),
+    proveedor: Optional[str] = Form(None),
+    monto: Optional[float] = Form(None),
+    moneda: Optional[str] = Form(None),
+    compraPlaneada: Optional[str] = Form(None),
+    observaciones: Optional[str] = Form(None),
+    webOrder: Optional[str] = Form(None),
+    dealId: Optional[str] = Form(None),
+    cotizacion: Optional[UploadFile] = File(None),
+    db: Session = Depends(get_db)
+):
+    ruta_archivo = None
+    if cotizacion:
+        # Guardar en volumen Docker
+        filename = f"{datetime.utcnow().timestamp()}_{cotizacion.filename}"
+        filepath = os.path.join(UPLOAD_DIR, filename)
+        with open(filepath, "wb") as buffer:
+            shutil.copyfileobj(cotizacion.file, buffer)
+        ruta_archivo = filepath
+
+    db_solicitud = SolicitudAdministrativaDB(
+        tipo_solicitud=tipoSolicitud,
+        tipo_compra=tipoCompra,
+        pep=pep,
+        ceco=ceco,
+        proveedor=proveedor,
+        monto=monto,
+        moneda=moneda,
+        compra_planeada=compraPlaneada,
+        observaciones=observaciones,
+        web_order=webOrder,
+        deal_id=dealId,
+        ruta_cotizacion=ruta_archivo
     )
-]
+    db.add(db_solicitud)
+    db.commit()
+    db.refresh(db_solicitud)
+    
+    return {
+        "id": db_solicitud.id,
+        "tipoSolicitud": db_solicitud.tipo_solicitud,
+        "tipoCompra": db_solicitud.tipo_compra,
+        "pep": db_solicitud.pep,
+        "ceco": db_solicitud.ceco,
+        "proveedor": db_solicitud.proveedor,
+        "monto": db_solicitud.monto,
+        "moneda": db_solicitud.moneda,
+        "compraPlaneada": db_solicitud.compra_planeada,
+        "observaciones": db_solicitud.observaciones,
+        "webOrder": db_solicitud.web_order,
+        "dealId": db_solicitud.deal_id,
+        "estado": db_solicitud.estado,
+        "gestor": db_solicitud.gestor,
+        "diasHabiles": calcular_dias_habiles(db_solicitud.fecha_creacion),
+        "rutaCotizacion": db_solicitud.ruta_cotizacion
+    }
 
-@app.get("/api/ausencias", response_model=List[Ausencia])
-def get_ausencias():
-    return mock_ausencias
-
-@app.post("/api/ausencias", response_model=Ausencia)
-def crear_ausencia(ausencia_in: AusenciaCreate):
-    nueva_ausencia = Ausencia(
-        id=len(mock_ausencias) + 1,
-        usuario="Funcionario Actual",
-        rol="Analista",
-        estado="PENDIENTE",
-        riesgo="ALTO" if "Proyecto crítico" in ausencia_in.actividades_criticas else "BAJO",
-        **ausencia_in.dict()
-    )
-    mock_ausencias.append(nueva_ausencia)
-    return nueva_ausencia
+@app.get("/api/administrativa", response_model=List[SolicitudAdminResponse])
+def get_solicitudes_admin(db: Session = Depends(get_db)):
+    solicitudes = db.query(SolicitudAdministrativaDB).order_by(SolicitudAdministrativaDB.id.desc()).all()
+    resultado = []
+    for sol in solicitudes:
+        resultado.append({
+            "id": sol.id,
+            "tipoSolicitud": sol.tipo_solicitud,
+            "tipoCompra": sol.tipo_compra,
+            "pep": sol.pep,
+            "ceco": sol.ceco,
+            "proveedor": sol.proveedor,
+            "monto": sol.monto,
+            "moneda": sol.moneda,
+            "compraPlaneada": sol.compra_planeada,
+            "observaciones": sol.observaciones,
+            "webOrder": sol.web_order,
+            "dealId": sol.deal_id,
+            "estado": sol.estado,
+            "gestor": sol.gestor,
+            "diasHabiles": calcular_dias_habiles(sol.fecha_creacion),
+            "rutaCotizacion": sol.ruta_cotizacion
+        })
+    return resultado

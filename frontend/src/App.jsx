@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, AlertCircle, CheckCircle, Clock, UserCircle, Briefcase, FileText, LayoutDashboard, Users, ArrowRight } from 'lucide-react';
+import { Calendar, AlertCircle, CheckCircle, Clock, UserCircle, Briefcase, FileText, LayoutDashboard, Users, ArrowRight, CreditCard, Truck, TrendingUp, Building } from 'lucide-react';
 import FormularioAusencia from './FormularioAusencia';
+import FormularioAdministrativa from './FormularioAdministrativa';
+import BandejaCompras from './BandejaCompras';
 
 const EQUIPOS = [
   "Administrativa", "Comercial", "Equipo Bancolombia", "Ingeniería Delivery", 
@@ -34,16 +36,75 @@ const MOCK_TEAM_ABSENCES = [
 
 function App() {
   const [ausencias, setAusencias] = useState([]);
-  const [perfil, setPerfil] = useState('Funcionario'); // 'Funcionario' o 'Líder'
-  const [currentModule, setCurrentModule] = useState('ausencias'); // 'ausencias' | 'administrativa'
+  const [solicitudesAdmin, setSolicitudesAdmin] = useState([]);
+  
+  useEffect(() => {
+    fetch('http://localhost:8000/api/administrativa')
+      .then(res => res.json())
+      .then(data => setSolicitudesAdmin(data))
+      .catch(err => console.error("Error fetching administrativa:", err));
+  }, []);
+
+  const getSemaforoColor = (dias) => {
+    if (dias <= 2) return 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]';
+    if (dias <= 5) return 'bg-orange-500 shadow-[0_0_8px_rgba(249,115,22,0.6)]';
+    return 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)]';
+  };
+  
+  // ESTADOS DE ARQUITECTURA (NUEVOS)
+  const [intranet, setIntranet] = useState('Operaciones'); // 'Operaciones' o 'Financiera'
+  const [perfil, setPerfil] = useState('Funcionario'); 
+  
+  // ESTADOS DE NAVEGACION
+  const [currentModule, setCurrentModule] = useState('ausencias'); // 'ausencias' | 'administrativa' | 'compras' | 'facturacion' | 'logistica' | 'financiera'
   const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard' | 'solicitar' | 'mis-solicitudes' | 'aprobaciones'
   const [selectedEquipo, setSelectedEquipo] = useState('Ingeniería Delivery');
 
-  // Cuando cambia el perfil, reiniciar a la pestaña principal de ese perfil
+  // EFECTOS PARA SINCRONIZAR NAVEGACION SEGUN PERFIL/INTRANET
   useEffect(() => {
-    setActiveTab(perfil === 'Funcionario' ? 'dashboard' : 'aprobaciones');
-    setCurrentModule('ausencias');
-  }, [perfil]);
+    if (intranet === 'Operaciones') {
+      setPerfil('Funcionario');
+      setCurrentModule('ausencias');
+      setActiveTab('dashboard');
+    } else {
+      setPerfil('Director Financiero');
+      setCurrentModule('ausencias');
+      setActiveTab('dashboard');
+    }
+  }, [intranet]);
+
+  useEffect(() => {
+    // Sincronizar módulos según el rol y la pestaña activa
+    if (intranet === 'Operaciones') {
+      if (currentModule === 'ausencias') setActiveTab(perfil === 'Funcionario' ? 'dashboard' : 'aprobaciones');
+      if (currentModule === 'administrativa') setActiveTab('mis-solicitudes');
+    } else {
+      // Financiera: por ahora dejamos un fallback simple o dashboard genérico
+      setActiveTab('dashboard');
+    }
+  }, [perfil, currentModule, intranet]);
+
+  // Obtener roles disponibles para el select de simulación
+  const getRolesForIntranet = () => {
+    if (intranet === 'Operaciones') return ["Funcionario", "Líder"];
+    return ["Director Financiero", "Gestor Compras", "Gestor Facturación", "Gestor Logística", "Gestor Financiero"];
+  };
+
+  // Determinar módulos visibles según Rol Financiero
+  const canSee = (moduloId) => {
+    if (intranet === 'Operaciones') return true; 
+    
+    // Reglas Financiera
+    if (moduloId === 'ausencias') return true; // Todos ven ausencias
+    if (perfil === 'Director Financiero') return true; // Director ve todo
+    
+    if (moduloId === 'compras' && perfil === 'Gestor Compras') return true;
+    if (moduloId === 'facturacion' && perfil === 'Gestor Facturación') return true;
+    if (moduloId === 'logistica' && perfil === 'Gestor Logística') return true;
+    if (moduloId === 'financiera' && perfil === 'Gestor Financiero') return true;
+    
+    return false;
+  };
 
   useEffect(() => {
     // Mock de base de datos personal/equipo
@@ -76,9 +137,13 @@ function App() {
           <div className="bg-white rounded-xl w-full flex justify-center shadow-md mb-3 overflow-hidden h-20 items-center">
             <img src="/logo.png" alt="Ikusi Velatia" className="w-full h-full object-contain scale-[2]" />
           </div>
-          <p className="text-[10px] text-slate-400 uppercase tracking-wider font-bold text-center w-full leading-tight">Intranet Dirección Operaciones</p>
+          <p className="text-[10px] text-slate-400 uppercase tracking-wider font-bold text-center w-full leading-tight">
+            Intranet {intranet === 'Operaciones' ? 'Dirección Operaciones' : 'Dirección Financiera'}
+          </p>
         </div>
+        
         <nav className="flex-1 px-4 py-6 space-y-2">
+          {/* Módulos comunes / Operaciones */}
           <button 
             onClick={() => setCurrentModule('ausencias')}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 ${currentModule === 'ausencias' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'}`}
@@ -86,30 +151,67 @@ function App() {
             <Calendar size={20} />
             Gestión Ausencias
           </button>
-          <button 
-            onClick={() => setCurrentModule('administrativa')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 ${currentModule === 'administrativa' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'}`}
-          >
-            <Briefcase size={20} />
-            Gestión Administrativa
-          </button>
+          
+          {intranet === 'Operaciones' && (
+            <button 
+              onClick={() => setCurrentModule('administrativa')}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 ${currentModule === 'administrativa' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'}`}
+            >
+              <Briefcase size={20} />
+              Gestión Administrativa
+            </button>
+          )}
+
+          {/* Módulos Intranet Financiera */}
+          {intranet === 'Financiera' && canSee('compras') && (
+            <button onClick={() => setCurrentModule('compras')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 ${currentModule === 'compras' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:bg-slate-800'}`}>
+              <CreditCard size={20} /> Gestión Compras
+            </button>
+          )}
+          {intranet === 'Financiera' && canSee('facturacion') && (
+            <button onClick={() => setCurrentModule('facturacion')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 ${currentModule === 'facturacion' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:bg-slate-800'}`}>
+              <FileText size={20} /> Gestión Facturación
+            </button>
+          )}
+          {intranet === 'Financiera' && canSee('logistica') && (
+            <button onClick={() => setCurrentModule('logistica')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 ${currentModule === 'logistica' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:bg-slate-800'}`}>
+              <Truck size={20} /> Gestión Logística
+            </button>
+          )}
+          {intranet === 'Financiera' && canSee('financiera') && (
+            <button onClick={() => setCurrentModule('financiera')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 ${currentModule === 'financiera' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:bg-slate-800'}`}>
+              <TrendingUp size={20} /> Gestión Financiera
+            </button>
+          )}
         </nav>
         
-        {/* Selector de Perfil (Para Pruebas) */}
-        <div className="p-4 border-t border-slate-800 bg-slate-950/50">
-          <div className="flex flex-col gap-2">
-            <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Simular Rol</label>
-            <div className="relative">
+        {/* Selector de Simulación de Arquitectura */}
+        <div className="p-4 border-t border-slate-800 bg-slate-950/80">
+          <div className="flex flex-col gap-4">
+            
+            <div>
+              <label className="text-[10px] font-bold text-blue-400 uppercase tracking-wider mb-1 block">Simular Intranet</label>
+              <select 
+                value={intranet} 
+                onChange={(e) => setIntranet(e.target.value)}
+                className="w-full bg-slate-800 border border-slate-700 text-white py-2 px-3 rounded-md outline-none text-xs font-medium cursor-pointer"
+              >
+                <option value="Operaciones">Intranet Operaciones</option>
+                <option value="Financiera">Intranet Financiera</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="text-[10px] font-bold text-blue-400 uppercase tracking-wider mb-1 block">Simular Rol</label>
               <select 
                 value={perfil} 
                 onChange={(e) => setPerfil(e.target.value)}
-                className="w-full appearance-none bg-slate-800 border border-slate-700 text-white py-2 px-3 pr-8 rounded-md outline-none focus:ring-2 focus:ring-blue-500 text-sm font-medium cursor-pointer"
+                className="w-full bg-slate-800 border border-slate-700 text-white py-2 px-3 rounded-md outline-none text-xs font-medium cursor-pointer"
               >
-                <option value="Funcionario">Funcionario (Juan Perez)</option>
-                <option value="Líder">Líder (Aprobador)</option>
+                {getRolesForIntranet().map(r => <option key={r} value={r}>{r}</option>)}
               </select>
-              <UserCircle size={16} className="absolute right-3 top-2.5 text-slate-400 pointer-events-none"/>
             </div>
+
           </div>
         </div>
       </aside>
@@ -122,10 +224,15 @@ function App() {
           <div className="flex justify-between items-center">
             <div>
               <h2 className="text-2xl font-bold text-slate-800">
-                {currentModule === 'ausencias' ? 'Módulo de Ausencias Laborales' : 'Módulo de Gestión Administrativa'}
+                {currentModule === 'ausencias' && 'Módulo de Ausencias Laborales'}
+                {currentModule === 'administrativa' && 'Módulo de Gestión Administrativa'}
+                {currentModule === 'compras' && 'Módulo de Gestión de Compras'}
+                {currentModule === 'facturacion' && 'Módulo de Gestión de Facturación'}
+                {currentModule === 'logistica' && 'Módulo de Gestión Logística'}
+                {currentModule === 'financiera' && 'Módulo de Gestión Financiera'}
               </h2>
               <p className="text-slate-500 mt-1 text-sm">
-                {perfil === 'Funcionario' 
+                {perfil === 'Funcionario' || intranet === 'Financiera'
                   ? 'Gestiona tus solicitudes y visibilidad del equipo operativo.' 
                   : 'Administra y supervisa los requerimientos operativos de tu equipo.'}
               </p>
@@ -133,51 +240,39 @@ function App() {
             
             <div className="flex items-center gap-4">
               <div className="text-right hidden md:block">
-                <p className="text-sm font-bold text-slate-700">{perfil === 'Funcionario' ? 'Juan Perez' : 'Líder de Operaciones'}</p>
-                <p className="text-xs text-slate-500">{perfil === 'Funcionario' ? 'Operador N1' : 'Director'}</p>
+                <p className="text-sm font-bold text-slate-700">Usuario Demo</p>
+                <p className="text-xs text-slate-500">{perfil}</p>
               </div>
               <div className="w-10 h-10 rounded-full bg-blue-100 border-2 border-blue-200 flex items-center justify-center text-blue-700 font-bold">
-                {perfil === 'Funcionario' ? 'JP' : 'LO'}
+                UD
               </div>
             </div>
           </div>
           
           {/* Navegación por Pestañas (Tabs) */}
-          {currentModule === 'ausencias' && (
-            <div className="flex gap-2 mt-6">
-              {perfil === 'Funcionario' ? (
-                <>
-                  <button 
-                    onClick={() => setActiveTab('dashboard')}
-                    className={`px-5 py-2.5 font-medium text-sm flex items-center gap-2 rounded-t-lg transition-all ${activeTab === 'dashboard' ? 'bg-slate-50 text-blue-700 border-t border-l border-r border-slate-200' : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50/80'}`}
-                  >
-                    <LayoutDashboard size={18}/> Dashboard Ausencias
-                  </button>
-                  <button 
-                    onClick={() => setActiveTab('solicitar')}
-                    className={`px-5 py-2.5 font-medium text-sm flex items-center gap-2 rounded-t-lg transition-all ${activeTab === 'solicitar' ? 'bg-slate-50 text-blue-700 border-t border-l border-r border-slate-200' : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50/80'}`}
-                  >
-                    <FileText size={18}/> Solicitar Ausencia
-                  </button>
-                  <button 
-                    onClick={() => setActiveTab('mis-solicitudes')}
-                    className={`px-5 py-2.5 font-medium text-sm flex items-center gap-2 rounded-t-lg transition-all ${activeTab === 'mis-solicitudes' ? 'bg-slate-50 text-blue-700 border-t border-l border-r border-slate-200' : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50/80'}`}
-                  >
-                    <Clock size={18}/> Mis Solicitudes
-                  </button>
-                </>
-              ) : (
-                <>
-                  <button 
-                    onClick={() => setActiveTab('aprobaciones')}
-                    className={`px-5 py-2.5 font-medium text-sm flex items-center gap-2 rounded-t-lg transition-all ${activeTab === 'aprobaciones' ? 'bg-slate-50 text-blue-700 border-t border-l border-r border-slate-200' : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50/80'}`}
-                  >
-                    <CheckCircle size={18}/> Bandeja de Aprobaciones
-                  </button>
-                </>
-              )}
-            </div>
-          )}
+          <div className="flex gap-2 mt-6 overflow-x-auto">
+            {/* Tabs Ausencias */}
+            {currentModule === 'ausencias' && intranet === 'Operaciones' && perfil === 'Funcionario' && (
+              <>
+                <button onClick={() => setActiveTab('dashboard')} className={`px-5 py-2.5 font-medium text-sm rounded-t-lg transition-all flex items-center gap-2 ${activeTab === 'dashboard' ? 'bg-slate-50 text-blue-700 border-t border-l border-r border-slate-200' : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50/80'}`}><LayoutDashboard size={18}/> Dashboard Ausencias</button>
+                <button onClick={() => setActiveTab('solicitar')} className={`px-5 py-2.5 font-medium text-sm rounded-t-lg transition-all flex items-center gap-2 ${activeTab === 'solicitar' ? 'bg-slate-50 text-blue-700 border-t border-l border-r border-slate-200' : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50/80'}`}><FileText size={18}/> Solicitar Ausencia</button>
+                <button onClick={() => setActiveTab('mis-solicitudes')} className={`px-5 py-2.5 font-medium text-sm rounded-t-lg transition-all flex items-center gap-2 ${activeTab === 'mis-solicitudes' ? 'bg-slate-50 text-blue-700 border-t border-l border-r border-slate-200' : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50/80'}`}><Clock size={18}/> Mis Solicitudes</button>
+              </>
+            )}
+            {currentModule === 'ausencias' && (perfil === 'Líder' || intranet === 'Financiera') && (
+              <button onClick={() => setActiveTab('aprobaciones')} className={`px-5 py-2.5 font-medium text-sm rounded-t-lg transition-all flex items-center gap-2 bg-slate-50 text-blue-700 border-t border-l border-r border-slate-200`}><CheckCircle size={18}/> Bandeja de Aprobaciones</button>
+            )}
+
+            {/* Tabs Administrativa */}
+            {currentModule === 'administrativa' && intranet === 'Operaciones' && (
+              <>
+                <button onClick={() => setActiveTab('mis-solicitudes')} className={`px-5 py-2.5 font-medium text-sm rounded-t-lg transition-all flex items-center gap-2 ${activeTab === 'mis-solicitudes' ? 'bg-slate-50 text-blue-700 border-t border-l border-r border-slate-200' : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50/80'}`}><Clock size={18}/> Mis Solicitudes</button>
+                <button onClick={() => setActiveTab('nueva-solicitud')} className={`px-5 py-2.5 font-medium text-sm rounded-t-lg transition-all flex items-center gap-2 ${activeTab === 'nueva-solicitud' ? 'bg-slate-50 text-blue-700 border-t border-l border-r border-slate-200' : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50/80'}`}><FileText size={18}/> Nueva solicitud</button>
+                <button onClick={() => setActiveTab('compras-pendientes')} className={`px-5 py-2.5 font-medium text-sm rounded-t-lg transition-all flex items-center gap-2 ${activeTab === 'compras-pendientes' ? 'bg-slate-50 text-blue-700 border-t border-l border-r border-slate-200' : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50/80'}`}><CreditCard size={18}/> Compras pendientes</button>
+                <button onClick={() => setActiveTab('facturacion-pendiente')} className={`px-5 py-2.5 font-medium text-sm rounded-t-lg transition-all flex items-center gap-2 ${activeTab === 'facturacion-pendiente' ? 'bg-slate-50 text-blue-700 border-t border-l border-r border-slate-200' : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50/80'}`}><FileText size={18}/> Facturación pendiente</button>
+              </>
+            )}
+          </div>
         </header>
 
         <div className="p-8">
@@ -466,13 +561,116 @@ function App() {
             </div>
           )}
 
-          {/* Módulo Administrativa Placeholder */}
-          {currentModule === 'administrativa' && (
-            <div className="flex flex-col items-center justify-center py-20 text-slate-400">
-              <Briefcase size={64} className="mb-4 opacity-50"/>
-              <h2 className="text-2xl font-bold text-slate-500">Módulo Administrativo en Construcción</h2>
-              <p className="mt-2 text-slate-400">Esta funcionalidad estará disponible en la siguiente fase.</p>
+          {/* Módulo Administrativa (Nueva Lógica) */}
+          {currentModule === 'administrativa' && activeTab === 'nueva-solicitud' && (
+            <div className="max-w-5xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
+               <FormularioAdministrativa 
+                 onCancel={() => setActiveTab('mis-solicitudes')}
+                 onSubmit={async (data) => {
+                   const form = new FormData();
+                   Object.keys(data).forEach(key => {
+                     if (data[key] !== null && data[key] !== undefined && data[key] !== '') {
+                       form.append(key, data[key]);
+                     }
+                   });
+                   
+                   try {
+                     const response = await fetch('http://localhost:8000/api/administrativa', {
+                       method: 'POST',
+                       body: form
+                     });
+                     if(response.ok) {
+                       const nuevaSol = await response.json();
+                       setSolicitudesAdmin(prev => [nuevaSol, ...prev]);
+                       alert("Solicitud enviada y guardada en Base de Datos.");
+                       setActiveTab('mis-solicitudes');
+                     } else {
+                       alert("Error al enviar la solicitud.");
+                     }
+                   } catch(error) {
+                     console.error("Error HTTP", error);
+                     alert("No se pudo conectar al Backend.");
+                   }
+                 }}
+               />
             </div>
+          )}
+
+          {currentModule === 'administrativa' && activeTab === 'mis-solicitudes' && (
+            <div className="max-w-6xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm mb-6 flex items-center justify-between">
+                <div>
+                  <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+                    <Clock size={24} className="text-blue-600"/> Mis Solicitudes Administrativas
+                  </h2>
+                  <p className="text-sm text-slate-500 mt-1">
+                    Historial de todas tus peticiones enviadas a la Dirección Financiera.
+                  </p>
+                </div>
+                <button onClick={() => setActiveTab('nueva-solicitud')} className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg font-semibold transition-all">Nueva Solicitud</button>
+              </div>
+
+              <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                <table className="w-full text-left">
+                  <thead className="bg-slate-50 border-b border-slate-200">
+                    <tr>
+                      <th className="px-6 py-4 font-semibold text-slate-600 text-sm text-center">Semáforo</th>
+                      <th className="px-6 py-4 font-semibold text-slate-600 text-sm">Tipo de solicitud</th>
+                      <th className="px-6 py-4 font-semibold text-slate-600 text-sm">PEP/CECO</th>
+                      <th className="px-6 py-4 font-semibold text-slate-600 text-sm">Gestor</th>
+                      <th className="px-6 py-4 font-semibold text-slate-600 text-sm">Tiempo en gestión</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {solicitudesAdmin.length > 0 ? solicitudesAdmin.map((s, i) => {
+                      const dias = s.diasHabiles !== undefined ? s.diasHabiles : 0;
+                      return (
+                      <tr key={i} className="hover:bg-slate-50 transition">
+                        <td className="px-6 py-4">
+                          <div className="flex justify-center">
+                             <div className={`w-4 h-4 rounded-full ${getSemaforoColor(dias)}`} title={`${dias} días hábiles`} />
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 font-semibold text-slate-800 text-sm">{s.tipoSolicitud}</td>
+                        <td className="px-6 py-4 font-medium text-slate-700 text-sm">
+                           {s.tipoCompra === 'CECO' || s.ceco ? s.ceco : s.pep}
+                        </td>
+                        <td className="px-6 py-4 font-medium text-slate-700 text-sm">{s.gestor || 'Pendiente de asignación'}</td>
+                        <td className="px-6 py-4 font-medium text-slate-700 text-sm">{dias} días hábiles</td>
+                      </tr>
+                    )}) : (
+                      <tr>
+                        <td colSpan="5" className="px-6 py-12 text-center text-slate-500">
+                          <CheckCircle size={48} className="mx-auto text-slate-300 mb-4 opacity-50"/>
+                          <p>No tienes solicitudes administrativas registradas.</p>
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {currentModule === 'administrativa' && activeTab !== 'nueva-solicitud' && activeTab !== 'mis-solicitudes' && (
+             <div className="flex flex-col items-center justify-center py-20 text-slate-400">
+               <Building size={64} className="mb-4 opacity-50"/>
+               <h2 className="text-2xl font-bold text-slate-500">Bandeja: {activeTab.replace(/-/g, ' ').toUpperCase()}</h2>
+               <p className="mt-2 text-slate-400">Las solicitudes aparecerán aquí. Haz clic en "Nueva solicitud" para probar el formulario dinámico.</p>
+             </div>
+          )}
+
+          {/* === MÓDULOS INTRANET FINANCIERA === */}
+          {currentModule === 'compras' && (
+            <BandejaCompras solicitudes={solicitudesAdmin.filter(s => s.tipoSolicitud === 'Compra')} />
+          )}
+
+          {['facturacion', 'logistica', 'financiera'].includes(currentModule) && (
+             <div className="flex flex-col items-center justify-center py-20 text-slate-400 bg-white rounded-xl border border-slate-200 shadow-sm mt-8">
+               <CreditCard size={64} className="mb-4 opacity-30 text-blue-600"/>
+               <h2 className="text-2xl font-bold text-slate-700">Módulo Exclusivo Financiero</h2>
+               <p className="mt-2 text-slate-500 text-center max-w-md">Estás simulando la Intranet de la Dirección Financiera con el rol de <strong>{perfil}</strong>.</p>
+             </div>
           )}
           
         </div>

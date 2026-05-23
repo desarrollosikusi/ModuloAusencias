@@ -3,3 +3,5 @@ uvicorn==0.23.2
 sqlalchemy==2.0.20
 psycopg2-binary==2.9.7
 pydantic==2.3.0
+holidays==0.34
+python-multipart==0.0.6

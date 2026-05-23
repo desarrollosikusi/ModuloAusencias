@@ -28,6 +28,12 @@ const TIPOS_PERMISO = [
   "Mudanza"
 ];
 
+const TIPOS_AUSENCIA_OPERATIVA = [
+  "Capacitación técnica",
+  "Descanso post implementación",
+  "Ventana de mantenimiento"
+];
+
 const ACTIVIDADES_CRITICAS = [
   "Atención cliente", "Gestión administrativa", "Implementación", 
   "Otro", "Proyecto crítico", "Soporte", "Ventana de mantenimiento"
@@ -38,6 +44,7 @@ export default function FormularioAusencia({ onCancel, onSubmit }) {
     tipoAusencia: '',
     tipoLicencia: '',
     tipoPermiso: '',
+    tipoAusenciaOperativa: '',
     fechaInicio: '',
     fechaFin: '',
     horaInicio: '',
@@ -179,6 +186,24 @@ export default function FormularioAusencia({ onCancel, onSubmit }) {
                   <option value="">Selecciona un permiso...</option>
                   {TIPOS_PERMISO.map(perm => (
                     <option key={perm} value={perm}>{perm}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+            
+            {formData.tipoAusencia === "Ausencias Operativas Especiales" && (
+              <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+                <label className="block text-sm font-medium text-slate-700 mb-2">Tipo de ausencia operativa *</label>
+                <select 
+                  name="tipoAusenciaOperativa" 
+                  value={formData.tipoAusenciaOperativa} 
+                  onChange={handleChange}
+                  required
+                  className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+                >
+                  <option value="">Selecciona una opción...</option>
+                  {TIPOS_AUSENCIA_OPERATIVA.map(op => (
+                    <option key={op} value={op}>{op}</option>
                   ))}
                 </select>
               </div>
