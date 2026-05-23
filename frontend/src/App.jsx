@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, AlertCircle, CheckCircle, Clock } from 'lucide-react';
+import { Calendar, AlertCircle, CheckCircle, Clock, UserCircle } from 'lucide-react';
+import FormularioAusencia from './FormularioAusencia';
 
 function App() {
   const [ausencias, setAusencias] = useState([]);
+  const [currentView, setCurrentView] = useState('dashboard');
+  const [perfil, setPerfil] = useState('Funcionario'); // 'Funcionario' o 'Líder'
 
   useEffect(() => {
     // En producción esto iría al backend: fetch('http://localhost:8000/api/ausencias')
@@ -47,76 +50,132 @@ function App() {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 p-8">
-        <header className="flex justify-between items-center mb-8">
-          <div>
-            <h2 className="text-2xl font-bold text-slate-800">Bandeja de Aprobaciones (Líder)</h2>
-            <p className="text-slate-500 mt-1">Gestiona las solicitudes de tu equipo y evalúa riesgos operativos.</p>
-          </div>
-          <button className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg font-medium transition shadow-sm">
-            Nueva Solicitud
-          </button>
-        </header>
+      <main className="flex-1 p-8 overflow-y-auto">
+        
+        {currentView === 'dashboard' ? (
+          <>
+            <header className="flex justify-between items-start mb-8">
+              <div>
+                <h2 className="text-2xl font-bold text-slate-800">
+                  {perfil === 'Líder' ? 'Bandeja de Aprobaciones (Líder)' : 'Mis Solicitudes de Ausencia'}
+                </h2>
+                <p className="text-slate-500 mt-1">
+                  {perfil === 'Líder' 
+                    ? 'Gestiona las solicitudes de tu equipo y evalúa riesgos operativos.' 
+                    : 'Consulta el estado de tus solicitudes y crea nuevas ausencias.'}
+                </p>
+              </div>
+              
+              <div className="flex flex-col items-end gap-3">
+                {/* Selector de Perfil */}
+                <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm">
+                  <UserCircle size={18} className="text-slate-500"/>
+                  <span className="text-sm font-medium text-slate-600">Perfil:</span>
+                  <select 
+                    value={perfil} 
+                    onChange={(e) => setPerfil(e.target.value)}
+                    className="text-sm font-semibold text-blue-700 bg-transparent outline-none cursor-pointer"
+                  >
+                    <option value="Funcionario">Funcionario</option>
+                    <option value="Líder">Líder</option>
+                  </select>
+                </div>
+                
+                {/* Botón de Nueva Solicitud (Solo Funcionario) */}
+                {perfil === 'Funcionario' && (
+                  <button 
+                    onClick={() => setCurrentView('formulario')}
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg font-medium transition shadow-sm w-full"
+                  >
+                    Nueva Solicitud
+                  </button>
+                )}
+              </div>
+            </header>
 
-        {/* KPIs */}
-        <div className="grid grid-cols-3 gap-6 mb-8">
-          <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-            <div className="text-slate-500 font-medium mb-1">Solicitudes Pendientes</div>
-            <div className="text-3xl font-bold text-slate-800">12</div>
-          </div>
-          <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-            <div className="text-slate-500 font-medium mb-1">Ausencias Activas</div>
-            <div className="text-3xl font-bold text-slate-800">4</div>
-          </div>
-          <div className="bg-white p-6 rounded-xl border border-red-200 bg-red-50 shadow-sm">
-            <div className="text-red-600 font-medium mb-1 flex items-center gap-2">
-              <AlertCircle size={18} />
-              Alertas de Riesgo
+            {/* KPIs (Solo Líder) */}
+            {perfil === 'Líder' && (
+              <div className="grid grid-cols-3 gap-6 mb-8">
+                <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                  <div className="text-slate-500 font-medium mb-1">Solicitudes Pendientes</div>
+                  <div className="text-3xl font-bold text-slate-800">12</div>
+                </div>
+                <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                  <div className="text-slate-500 font-medium mb-1">Ausencias Activas</div>
+                  <div className="text-3xl font-bold text-slate-800">4</div>
+                </div>
+                <div className="bg-white p-6 rounded-xl border border-red-200 bg-red-50 shadow-sm">
+                  <div className="text-red-600 font-medium mb-1 flex items-center gap-2">
+                    <AlertCircle size={18} />
+                    Alertas de Riesgo
+                  </div>
+                  <div className="text-3xl font-bold text-red-700">2</div>
+                </div>
+              </div>
+            )}
+
+            {/* Tabla Inteligente */}
+            <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+              <table className="w-full text-left">
+                <thead className="bg-slate-50 border-b border-slate-200">
+                  <tr>
+                    {perfil === 'Líder' && <th className="px-6 py-4 font-semibold text-slate-600">Funcionario</th>}
+                    <th className="px-6 py-4 font-semibold text-slate-600">Tipo</th>
+                    <th className="px-6 py-4 font-semibold text-slate-600">Fechas</th>
+                    <th className="px-6 py-4 font-semibold text-slate-600">Estado</th>
+                    <th className="px-6 py-4 font-semibold text-slate-600">Riesgo Operativo</th>
+                    <th className="px-6 py-4 font-semibold text-slate-600">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {ausencias.filter(a => perfil === 'Líder' || a.usuario === 'Juan Perez').map((a, i) => (
+                    <tr key={i} className="hover:bg-slate-50 transition">
+                      {perfil === 'Líder' && (
+                        <td className="px-6 py-4">
+                          <div className="font-medium text-slate-800">{a.usuario}</div>
+                          <div className="text-sm text-slate-500">{a.rol}</div>
+                        </td>
+                      )}
+                      <td className="px-6 py-4 text-slate-700">{a.tipo}</td>
+                      <td className="px-6 py-4 text-slate-700">{a.fechas}</td>
+                      <td className="px-6 py-4">
+                        <span className="px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-700">
+                          {a.estado}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getRiesgoColor(a.riesgo)}`}>
+                          {a.riesgo}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <button className="text-blue-600 hover:text-blue-800 font-medium text-sm">
+                          {perfil === 'Líder' ? 'Gestionar' : 'Ver Detalles'}
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                  {perfil === 'Funcionario' && ausencias.filter(a => a.usuario === 'Juan Perez').length === 0 && (
+                     <tr>
+                        <td colSpan="5" className="px-6 py-8 text-center text-slate-500">
+                           No tienes solicitudes de ausencia registradas.
+                        </td>
+                     </tr>
+                  )}
+                </tbody>
+              </table>
             </div>
-            <div className="text-3xl font-bold text-red-700">2</div>
-          </div>
-        </div>
-
-        {/* Tabla Inteligente */}
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-          <table className="w-full text-left">
-            <thead className="bg-slate-50 border-b border-slate-200">
-              <tr>
-                <th className="px-6 py-4 font-semibold text-slate-600">Funcionario</th>
-                <th className="px-6 py-4 font-semibold text-slate-600">Tipo</th>
-                <th className="px-6 py-4 font-semibold text-slate-600">Fechas</th>
-                <th className="px-6 py-4 font-semibold text-slate-600">Estado</th>
-                <th className="px-6 py-4 font-semibold text-slate-600">Riesgo Operativo</th>
-                <th className="px-6 py-4 font-semibold text-slate-600">Acciones</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {ausencias.map(a => (
-                <tr key={a.id} className="hover:bg-slate-50 transition">
-                  <td className="px-6 py-4">
-                    <div className="font-medium text-slate-800">{a.usuario}</div>
-                    <div className="text-sm text-slate-500">{a.rol}</div>
-                  </td>
-                  <td className="px-6 py-4 text-slate-700">{a.tipo}</td>
-                  <td className="px-6 py-4 text-slate-700">{a.fechas}</td>
-                  <td className="px-6 py-4">
-                    <span className="px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-700">
-                      {a.estado}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getRiesgoColor(a.riesgo)}`}>
-                      {a.riesgo}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <button className="text-blue-600 hover:text-blue-800 font-medium text-sm">Gestionar</button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+          </>
+        ) : (
+          <FormularioAusencia 
+            onCancel={() => setCurrentView('dashboard')} 
+            onSubmit={(data) => {
+              console.log("Datos enviados:", data);
+              alert("¡Solicitud enviada con éxito!");
+              setCurrentView('dashboard');
+            }} 
+          />
+        )}
       </main>
     </div>
   );
