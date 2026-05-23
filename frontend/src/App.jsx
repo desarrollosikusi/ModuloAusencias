@@ -258,14 +258,14 @@ function App() {
           {/* Navegación por Pestañas (Tabs) */}
           <div className="flex gap-2 mt-6 overflow-x-auto">
             {/* Tabs Ausencias */}
-            {currentModule === 'ausencias' && intranet === 'Operaciones' && perfil === 'Funcionario' && (
+            {currentModule === 'ausencias' && perfil === 'Funcionario' && (
               <>
                 <button onClick={() => setActiveTab('dashboard')} className={`px-5 py-2.5 font-medium text-sm rounded-t-lg transition-all flex items-center gap-2 ${activeTab === 'dashboard' ? 'bg-slate-50 text-blue-700 border-t border-l border-r border-slate-200' : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50/80'}`}><LayoutDashboard size={18}/> Dashboard Ausencias</button>
                 <button onClick={() => setActiveTab('solicitar')} className={`px-5 py-2.5 font-medium text-sm rounded-t-lg transition-all flex items-center gap-2 ${activeTab === 'solicitar' ? 'bg-slate-50 text-blue-700 border-t border-l border-r border-slate-200' : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50/80'}`}><FileText size={18}/> Solicitar Ausencia</button>
                 <button onClick={() => setActiveTab('mis-solicitudes')} className={`px-5 py-2.5 font-medium text-sm rounded-t-lg transition-all flex items-center gap-2 ${activeTab === 'mis-solicitudes' ? 'bg-slate-50 text-blue-700 border-t border-l border-r border-slate-200' : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50/80'}`}><Clock size={18}/> Mis Solicitudes</button>
               </>
             )}
-            {currentModule === 'ausencias' && (perfil === 'Líder' || intranet === 'Financiera') && (
+            {currentModule === 'ausencias' && perfil === 'Líder' && (
               <button onClick={() => setActiveTab('aprobaciones')} className={`px-5 py-2.5 font-medium text-sm rounded-t-lg transition-all flex items-center gap-2 bg-slate-50 text-blue-700 border-t border-l border-r border-slate-200`}><CheckCircle size={18}/> Bandeja de Aprobaciones</button>
             )}
 
