@@ -22,3 +22,14 @@ class SolicitudAdministrativaDB(Base):
     estado = Column(String, default="Abierto")
     gestor = Column(String, nullable=True)
     fecha_creacion = Column(DateTime, default=datetime.utcnow)
+
+    # Campos de Gestión (Llenados por el Gestor Financiero)
+    fecha_orden_compra = Column(DateTime, nullable=True)
+    orden_compra = Column(String(8), nullable=True)
+    valor_final = Column(Float, nullable=True)
+    moneda_final = Column(String, nullable=True)
+    
+    # Campos adicionales para CISCO (Gestión)
+    cisco_quote = Column(String, nullable=True)
+    cisco_so = Column(String, nullable=True)
+    cisco_web_order_final = Column(String, nullable=True)

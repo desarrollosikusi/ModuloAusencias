@@ -65,8 +65,27 @@ class SolicitudAdminResponse(BaseModel):
     diasHabiles: int
     rutaCotizacion: Optional[str] = None
     
+    # Nuevos campos de gestión
+    fechaOrdenCompra: Optional[str] = None
+    ordenCompra: Optional[str] = None
+    valorFinal: Optional[float] = None
+    monedaFinal: Optional[str] = None
+    ciscoQuote: Optional[str] = None
+    ciscoSo: Optional[str] = None
+    ciscoWebOrderFinal: Optional[str] = None
+
     class Config:
         from_attributes = True
+
+class SolicitudAdminGestionar(BaseModel):
+    fecha_orden_compra: Optional[str] = None
+    orden_compra: Optional[str] = None
+    valor_final: Optional[float] = None
+    moneda_final: Optional[str] = None
+    gestor: str
+    cisco_quote: Optional[str] = None
+    cisco_so: Optional[str] = None
+    cisco_web_order_final: Optional[str] = None
 
 # Directorio de subida de archivos (Volumen persistente de Docker)
 UPLOAD_DIR = "/app/uploads"
@@ -135,7 +154,61 @@ def crear_solicitud_admin(
         "estado": db_solicitud.estado,
         "gestor": db_solicitud.gestor,
         "diasHabiles": calcular_dias_habiles(db_solicitud.fecha_creacion),
-        "rutaCotizacion": db_solicitud.ruta_cotizacion
+        "rutaCotizacion": db_solicitud.ruta_cotizacion,
+        "fechaOrdenCompra": str(db_solicitud.fecha_orden_compra) if db_solicitud.fecha_orden_compra else None,
+        "ordenCompra": db_solicitud.orden_compra,
+        "valorFinal": db_solicitud.valor_final,
+        "monedaFinal": db_solicitud.moneda_final,
+        "ciscoQuote": db_solicitud.cisco_quote,
+        "ciscoSo": db_solicitud.cisco_so,
+        "ciscoWebOrderFinal": db_solicitud.cisco_web_order_final
+    }
+
+@app.put("/api/administrativa/{solicitud_id}/gestionar", response_model=SolicitudAdminResponse)
+def gestionar_solicitud(solicitud_id: int, datos: SolicitudAdminGestionar, db: Session = Depends(get_db)):
+    solicitud = db.query(SolicitudAdministrativaDB).filter(SolicitudAdministrativaDB.id == solicitud_id).first()
+    if not solicitud:
+        return {"error": "No encontrada"}
+    
+    if datos.fecha_orden_compra:
+        solicitud.fecha_orden_compra = datetime.fromisoformat(datos.fecha_orden_compra.replace("Z", "+00:00"))
+    
+    solicitud.orden_compra = datos.orden_compra
+    solicitud.valor_final = datos.valor_final
+    solicitud.moneda_final = datos.moneda_final
+    solicitud.gestor = datos.gestor
+    solicitud.cisco_quote = datos.cisco_quote
+    solicitud.cisco_so = datos.cisco_so
+    solicitud.cisco_web_order_final = datos.cisco_web_order_final
+    solicitud.estado = "Gestionado"
+
+    db.commit()
+    db.refresh(solicitud)
+
+    return {
+        "id": solicitud.id,
+        "tipoSolicitud": solicitud.tipo_solicitud,
+        "tipoCompra": solicitud.tipo_compra,
+        "pep": solicitud.pep,
+        "ceco": solicitud.ceco,
+        "proveedor": solicitud.proveedor,
+        "monto": solicitud.monto,
+        "moneda": solicitud.moneda,
+        "compraPlaneada": solicitud.compra_planeada,
+        "observaciones": solicitud.observaciones,
+        "webOrder": solicitud.web_order,
+        "dealId": solicitud.deal_id,
+        "estado": solicitud.estado,
+        "gestor": solicitud.gestor,
+        "diasHabiles": calcular_dias_habiles(solicitud.fecha_creacion),
+        "rutaCotizacion": solicitud.ruta_cotizacion,
+        "fechaOrdenCompra": str(solicitud.fecha_orden_compra) if solicitud.fecha_orden_compra else None,
+        "ordenCompra": solicitud.orden_compra,
+        "valorFinal": solicitud.valor_final,
+        "monedaFinal": solicitud.moneda_final,
+        "ciscoQuote": solicitud.cisco_quote,
+        "ciscoSo": solicitud.cisco_so,
+        "ciscoWebOrderFinal": solicitud.cisco_web_order_final
     }
 
 @app.get("/api/administrativa", response_model=List[SolicitudAdminResponse])
@@ -159,6 +232,13 @@ def get_solicitudes_admin(db: Session = Depends(get_db)):
             "estado": sol.estado,
             "gestor": sol.gestor,
             "diasHabiles": calcular_dias_habiles(sol.fecha_creacion),
-            "rutaCotizacion": sol.ruta_cotizacion
+            "rutaCotizacion": sol.ruta_cotizacion,
+            "fechaOrdenCompra": str(sol.fecha_orden_compra) if sol.fecha_orden_compra else None,
+            "ordenCompra": sol.orden_compra,
+            "valorFinal": sol.valor_final,
+            "monedaFinal": sol.moneda_final,
+            "ciscoQuote": sol.cisco_quote,
+            "ciscoSo": sol.cisco_so,
+            "ciscoWebOrderFinal": sol.cisco_web_order_final
         })
     return resultado

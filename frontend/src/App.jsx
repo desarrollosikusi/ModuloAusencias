@@ -3,6 +3,7 @@ import { Calendar, AlertCircle, CheckCircle, Clock, UserCircle, Briefcase, FileT
 import FormularioAusencia from './FormularioAusencia';
 import FormularioAdministrativa from './FormularioAdministrativa';
 import BandejaCompras from './BandejaCompras';
+import ModalDetalleSolicitud from './ModalDetalleSolicitud';
 
 const EQUIPOS = [
   "Administrativa", "Comercial", "Equipo Bancolombia", "Ingeniería Delivery", 
@@ -37,12 +38,17 @@ const MOCK_TEAM_ABSENCES = [
 function App() {
   const [ausencias, setAusencias] = useState([]);
   const [solicitudesAdmin, setSolicitudesAdmin] = useState([]);
+  const [selectedSolicitud, setSelectedSolicitud] = useState(null);
   
-  useEffect(() => {
+  const cargarAdministrativas = () => {
     fetch('http://localhost:8000/api/administrativa')
       .then(res => res.json())
       .then(data => setSolicitudesAdmin(data))
       .catch(err => console.error("Error fetching administrativa:", err));
+  };
+
+  useEffect(() => {
+    cargarAdministrativas();
   }, []);
 
   const getSemaforoColor = (dias) => {
@@ -628,7 +634,11 @@ function App() {
                       <tr key={i} className="hover:bg-slate-50 transition">
                         <td className="px-6 py-4">
                           <div className="flex justify-center">
-                             <div className={`w-4 h-4 rounded-full ${getSemaforoColor(dias)}`} title={`${dias} días hábiles`} />
+                             <div 
+                               className={`w-4 h-4 rounded-full cursor-pointer hover:scale-150 transition-all ${getSemaforoColor(dias)}`} 
+                               title="Haz clic para ver detalles" 
+                               onClick={() => setSelectedSolicitud(s)}
+                             />
                           </div>
                         </td>
                         <td className="px-6 py-4 font-semibold text-slate-800 text-sm">{s.tipoSolicitud}</td>
@@ -662,7 +672,11 @@ function App() {
 
           {/* === MÓDULOS INTRANET FINANCIERA === */}
           {currentModule === 'compras' && (
-            <BandejaCompras solicitudes={solicitudesAdmin.filter(s => s.tipoSolicitud === 'Compra')} />
+            <BandejaCompras 
+              solicitudes={solicitudesAdmin.filter(s => s.tipoSolicitud === 'Compra')} 
+              perfilActual={perfil} 
+              onSolicitudActualizada={cargarAdministrativas}
+            />
           )}
 
           {['facturacion', 'logistica', 'financiera'].includes(currentModule) && (
@@ -673,6 +687,12 @@ function App() {
              </div>
           )}
           
+          <ModalDetalleSolicitud 
+            isOpen={!!selectedSolicitud} 
+            onClose={() => setSelectedSolicitud(null)} 
+            solicitud={selectedSolicitud} 
+          />
+
         </div>
       </main>
     </div>

@@ -1,13 +1,37 @@
 import React, { useState } from 'react';
 import { CreditCard, CheckCircle, Clock, LayoutDashboard, List } from 'lucide-react';
+import ModalDetalleSolicitud from './ModalDetalleSolicitud';
+import ModalGestionarSolicitud from './ModalGestionarSolicitud';
 
-export default function BandejaCompras({ solicitudes }) {
+export default function BandejaCompras({ solicitudes, perfilActual, onSolicitudActualizada }) {
   const [activeTab, setActiveTab] = useState('bandeja'); // 'bandeja' o 'dashboard'
+  const [selectedSolicitud, setSelectedSolicitud] = useState(null);
+  const [modalGestion, setModalGestion] = useState(null);
 
   const getSemaforoColor = (dias) => {
     if (dias <= 2) return 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]';
     if (dias <= 5) return 'bg-orange-500 shadow-[0_0_8px_rgba(249,115,22,0.6)]';
     return 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)]';
+  };
+
+  const handleGestionar = async (id, datos) => {
+    try {
+      const response = await fetch(`http://localhost:8000/api/administrativa/${id}/gestionar`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(datos)
+      });
+      if(response.ok) {
+        alert("¡Solicitud gestionada exitosamente!");
+        setModalGestion(null);
+        if(onSolicitudActualizada) onSolicitudActualizada();
+      } else {
+        alert("Hubo un error al guardar la gestión.");
+      }
+    } catch(err) {
+      console.error(err);
+      alert("Error conectando con el servidor.");
+    }
   };
 
   return (
@@ -66,7 +90,11 @@ export default function BandejaCompras({ solicitudes }) {
                     <tr key={index} className="hover:bg-slate-50 transition">
                       <td className="px-6 py-4">
                         <div className="flex justify-center">
-                          <div className={`w-4 h-4 rounded-full ${getSemaforoColor(dias)}`} title={`${dias} días hábiles`} />
+                          <div 
+                            className={`w-4 h-4 rounded-full cursor-pointer hover:scale-150 transition-all ${getSemaforoColor(dias)}`} 
+                            title="Ver detalles de solicitud" 
+                            onClick={() => setSelectedSolicitud(sol)}
+                          />
                         </div>
                       </td>
                       <td className="px-6 py-4">
@@ -85,8 +113,11 @@ export default function BandejaCompras({ solicitudes }) {
                         {dias} días hábiles
                       </td>
                       <td className="px-6 py-4">
-                        <button className="bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 px-4 py-1.5 rounded-md font-semibold text-sm transition">
-                          Revisar
+                        <button 
+                          onClick={() => setModalGestion(sol)}
+                          className="bg-blue-50 text-blue-700 hover:bg-blue-600 hover:text-white border border-blue-200 px-4 py-1.5 rounded-md font-semibold text-sm transition"
+                        >
+                          Gestionar
                         </button>
                       </td>
                     </tr>
@@ -112,6 +143,20 @@ export default function BandejaCompras({ solicitudes }) {
            <p className="text-slate-500 mt-2 max-w-md mx-auto">Aquí se visualizarán las métricas de compras, tiempos de ciclo y eficiencia de los gestores.</p>
         </div>
       )}
+
+      <ModalDetalleSolicitud 
+        isOpen={!!selectedSolicitud} 
+        onClose={() => setSelectedSolicitud(null)} 
+        solicitud={selectedSolicitud} 
+      />
+
+      <ModalGestionarSolicitud 
+        isOpen={!!modalGestion}
+        onClose={() => setModalGestion(null)}
+        solicitud={modalGestion}
+        perfilActual={perfilActual}
+        onGestionar={handleGestionar}
+      />
 
     </div>
   );
