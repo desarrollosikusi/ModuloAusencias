@@ -3,8 +3,8 @@ import { Calendar, AlertCircle, CheckCircle, Clock, UserCircle, Briefcase, FileT
 import FormularioAusencia from './FormularioAusencia';
 
 const EQUIPOS = [
-  "Comercial", "Ingeniería Preventa", "Project Managers", "Ingeniería Delivery", 
-  "Service Delivery Managers", "Soporte", "Administrativa", "Equipo Bancolombia"
+  "Administrativa", "Comercial", "Equipo Bancolombia", "Ingeniería Delivery", 
+  "Ingeniería Preventa", "Project Managers", "Service Delivery Managers", "Soporte"
 ];
 
 const MOCK_TEAM_ABSENCES = [
@@ -72,9 +72,11 @@ function App() {
       
       {/* Sidebar Corporativo */}
       <aside className="w-64 bg-slate-900 text-white flex flex-col shadow-xl z-10 shrink-0">
-        <div className="p-6 border-b border-slate-800">
-          <h1 className="text-2xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-white">CorpHR</h1>
-          <p className="text-xs text-slate-400 mt-1 uppercase tracking-wider font-semibold">Intranet Empresarial</p>
+        <div className="p-6 border-b border-slate-800 flex flex-col items-center">
+          <div className="bg-white rounded-xl w-full flex justify-center shadow-md mb-3 overflow-hidden h-20 items-center">
+            <img src="/logo.png" alt="Ikusi Velatia" className="w-full h-full object-contain scale-[2]" />
+          </div>
+          <p className="text-[10px] text-slate-400 uppercase tracking-wider font-bold text-center w-full leading-tight">Intranet Dirección Operaciones</p>
         </div>
         <nav className="flex-1 px-4 py-6 space-y-2">
           <button 

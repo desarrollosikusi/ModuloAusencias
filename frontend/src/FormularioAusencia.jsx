@@ -2,20 +2,42 @@ import React, { useState } from 'react';
 import { Calendar, Clock, FileText, Briefcase, AlertTriangle, CheckCircle, UploadCloud, Users } from 'lucide-react';
 
 const TIPOS_AUSENCIA = [
-  "Vacaciones", "Permiso personal", "Cita médica", "Incapacidad",
-  "Licencia remunerada", "Licencia no remunerada", "Calamidad doméstica",
-  "Compensatorio", "Estudio / capacitación", "Maternidad / paternidad",
-  "Duelo", "Trabajo remoto excepcional", "Otro"
+  "Ausencias Operativas Especiales",
+  "Incapacidad por enfermedad general",
+  "Licencias",
+  "Permisos internos de compañía",
+  "Vacaciones"
+];
+
+const TIPOS_LICENCIA = [
+  "Calamidad doméstica",
+  "Citaciones judiciales o administrativas",
+  "Jurado de votación",
+  "Licencia de Maternidad",
+  "Licencia de Paternidad",
+  "Licencia para sufragio",
+  "Licencia por Luto",
+  "Licencia por matrimonio"
+];
+
+const TIPOS_PERMISO = [
+  "Compensatorio",
+  "Cumpleaños",
+  "Día de la familia",
+  "Estudios/certificaciones",
+  "Mudanza"
 ];
 
 const ACTIVIDADES_CRITICAS = [
-  "Atención cliente", "Implementación", "Soporte",
-  "Gestión administrativa", "Proyecto crítico", "Ventana de mantenimiento", "Otro"
+  "Atención cliente", "Gestión administrativa", "Implementación", 
+  "Otro", "Proyecto crítico", "Soporte", "Ventana de mantenimiento"
 ];
 
 export default function FormularioAusencia({ onCancel, onSubmit }) {
   const [formData, setFormData] = useState({
     tipoAusencia: '',
+    tipoLicencia: '',
+    tipoPermiso: '',
     fechaInicio: '',
     fechaFin: '',
     horaInicio: '',
@@ -36,7 +58,7 @@ export default function FormularioAusencia({ onCancel, onSubmit }) {
   const isOperacionCritica = formData.actividadesCriticas.includes("Atención cliente") || 
                              formData.actividadesCriticas.includes("Proyecto crítico");
   
-  const requiresAdjunto = formData.tipoAusencia === "Incapacidad";
+  const requiresAdjunto = formData.tipoAusencia === "Incapacidad por enfermedad general";
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -125,6 +147,42 @@ export default function FormularioAusencia({ onCancel, onSubmit }) {
                 ))}
               </select>
             </div>
+            
+            {formData.tipoAusencia === "Licencias" && (
+              <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+                <label className="block text-sm font-medium text-slate-700 mb-2">Tipo de licencia *</label>
+                <select 
+                  name="tipoLicencia" 
+                  value={formData.tipoLicencia} 
+                  onChange={handleChange}
+                  required
+                  className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+                >
+                  <option value="">Selecciona una licencia...</option>
+                  {TIPOS_LICENCIA.map(lic => (
+                    <option key={lic} value={lic}>{lic}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+            
+            {formData.tipoAusencia === "Permisos internos de compañía" && (
+              <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+                <label className="block text-sm font-medium text-slate-700 mb-2">Tipo de permiso *</label>
+                <select 
+                  name="tipoPermiso" 
+                  value={formData.tipoPermiso} 
+                  onChange={handleChange}
+                  required
+                  className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+                >
+                  <option value="">Selecciona un permiso...</option>
+                  {TIPOS_PERMISO.map(perm => (
+                    <option key={perm} value={perm}>{perm}</option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
         </section>
 
