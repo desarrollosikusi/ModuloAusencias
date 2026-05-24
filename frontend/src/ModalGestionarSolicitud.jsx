@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, CheckCircle, Calendar, Save } from 'lucide-react';
-import ModalDetalleSolicitud from './ModalDetalleSolicitud';
 
-export default function ModalGestionarSolicitud({ isOpen, onClose, solicitud, perfilActual, onGestionar }) {
+export default function ModalGestionarSolicitud({ isOpen, onClose, solicitud, usuarioActual, onGestionar }) {
   const [formData, setFormData] = useState({
     fecha_orden_compra: new Date().toISOString().split('T')[0],
     orden_compra: '',
@@ -39,7 +38,7 @@ export default function ModalGestionarSolicitud({ isOpen, onClose, solicitud, pe
     onGestionar(solicitud.id, {
       ...formData,
       valor_final: parseFloat(formData.valor_final),
-      gestor: perfilActual
+      gestor: usuarioActual
     });
   };
 
@@ -60,7 +59,6 @@ export default function ModalGestionarSolicitud({ isOpen, onClose, solicitud, pe
 
         <div className="overflow-y-auto flex-1 p-6 space-y-8 bg-slate-50">
           
-          {/* Reutilizamos parte de la vista de detalles de forma contenida */}
           <section className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
             <h3 className="text-lg font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2">Información Original</h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
@@ -71,7 +69,6 @@ export default function ModalGestionarSolicitud({ isOpen, onClose, solicitud, pe
             </div>
           </section>
 
-          {/* Formulario de Gestión */}
           <section className="bg-white p-6 rounded-xl border border-blue-200 shadow-sm relative overflow-hidden">
             <div className="absolute top-0 left-0 w-2 h-full bg-blue-500"></div>
             <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
@@ -96,9 +93,13 @@ export default function ModalGestionarSolicitud({ isOpen, onClose, solicitud, pe
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">Gestor de Compras</label>
-                    <input type="text" value={perfilActual} disabled
-                           className="w-full p-3 border border-slate-200 rounded-lg bg-slate-100 text-slate-500 font-medium"/>
+                    <label className="block text-sm font-semibold text-slate-700 mb-1">Gestor de Compras</label>
+                    <input 
+                      type="text" 
+                      value={usuarioActual} 
+                      disabled
+                      className="w-full p-2 border border-slate-300 rounded-md bg-slate-100 text-slate-500 font-medium"
+                    />
                   </div>
 
                   <div>

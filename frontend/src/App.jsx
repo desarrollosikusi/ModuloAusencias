@@ -10,6 +10,16 @@ const EQUIPOS = [
   "Ingeniería Preventa", "Project Managers", "Service Delivery Managers", "Soporte"
 ];
 
+const USUARIOS_FINANCIERA = [
+  { nombre: "JUAN CAMILO RODRIGUEZ MORALES", cargo: "Director Financiero", perfil: "Director Financiero" },
+  { nombre: "JULIAN ANDRES QUINTERO QUINTERO", cargo: "Líder Gestión Cadena de Suministro", perfil: "Gestor Compras" },
+  { nombre: "MARYI KATALINA RODRIGUEZ", cargo: "Analista de Recaudo", perfil: "Gestor Compras" },
+  { nombre: "MIGUEL ANGEL ROJAS LEON", cargo: "Especialista Comercio Exterior", perfil: "Gestor Logística" },
+  { nombre: "GINNA MARCELA MOGOLLON PULIDO", cargo: "Analista de Facturación y Recaudo", perfil: "Gestor Facturación" },
+  { nombre: "JENNIFER VALENCIA CASTAÑO", cargo: "Analista Controlling", perfil: "Gestor Financiero" },
+  { nombre: "IVAN STIVEN BONILLA RAMIREZ", cargo: "Controller", perfil: "Gestor Financiero" }
+];
+
 const MOCK_TEAM_ABSENCES = [
   {
     equipo: "Ingeniería Delivery",
@@ -60,6 +70,7 @@ function App() {
   // ESTADOS DE ARQUITECTURA (NUEVOS)
   const [intranet, setIntranet] = useState('Operaciones'); // 'Operaciones' o 'Financiera'
   const [perfil, setPerfil] = useState('Funcionario'); 
+  const [usuarioNombre, setUsuarioNombre] = useState('Usuario Demo');
   
   // ESTADOS DE NAVEGACION
   const [currentModule, setCurrentModule] = useState('ausencias'); // 'ausencias' | 'administrativa' | 'compras' | 'facturacion' | 'logistica' | 'financiera'
@@ -68,19 +79,19 @@ function App() {
 
   // EFECTOS PARA SINCRONIZAR NAVEGACION SEGUN PERFIL/INTRANET
   useEffect(() => {
+    // Resetear modulo al cambiar intranet
     if (intranet === 'Operaciones') {
+      setCurrentModule('ausencias');
+      setActiveTab('dashboard');
       setPerfil('Funcionario');
-      setCurrentModule('ausencias');
-      setActiveTab('dashboard');
-    } else {
-      setPerfil('Director Financiero');
-      setCurrentModule('ausencias');
-      setActiveTab('dashboard');
+      setUsuarioNombre('Usuario Demo');
+    } else if (intranet === 'Financiera') {
+      const defaultUser = USUARIOS_FINANCIERA[0];
+      setPerfil(defaultUser.perfil);
+      setUsuarioNombre(defaultUser.nombre);
+      setCurrentModule('compras'); 
     }
-    if (intranet === 'Financiera' && !getRolesForIntranet().includes(perfil)) {
-      setPerfil('Director Financiero');
-    }
-  }, [intranet, perfil]);
+  }, [intranet]);
 
   const isFuncionario = perfil === 'Funcionario' || perfil.startsWith('Gestor') || perfil === 'Director Financiero';
   const isLider = perfil === 'Líder' || perfil === 'Director Financiero';
@@ -95,12 +106,6 @@ function App() {
       setActiveTab('dashboard');
     }
   }, [perfil, currentModule, intranet]);
-
-  // Obtener roles disponibles para el select de simulación
-  const getRolesForIntranet = () => {
-    if (intranet === 'Operaciones') return ["Funcionario", "Líder"];
-    return ["Director Financiero", "Gestor Compras", "Gestor Facturación", "Gestor Logística", "Gestor Financiero"];
-  };
 
   // Determinar módulos visibles según Rol Financiero
   const canSee = (moduloId) => {
@@ -213,16 +218,39 @@ function App() {
               </select>
             </div>
 
-            <div>
-              <label className="text-[10px] font-bold text-blue-400 uppercase tracking-wider mb-1 block">Simular Rol</label>
-              <select 
-                value={perfil} 
-                onChange={(e) => setPerfil(e.target.value)}
-                className="w-full bg-slate-800 border border-slate-700 text-white py-2 px-3 rounded-md outline-none text-xs font-medium cursor-pointer"
-              >
-                {getRolesForIntranet().map(r => <option key={r} value={r}>{r}</option>)}
-              </select>
-            </div>
+            {intranet === 'Financiera' ? (
+              <div>
+                <label className="text-[10px] font-bold text-blue-400 uppercase tracking-wider mb-1 block">Simular Usuario</label>
+                <select 
+                  value={usuarioNombre} 
+                  onChange={(e) => {
+                    const selected = USUARIOS_FINANCIERA.find(u => u.nombre === e.target.value);
+                    if (selected) {
+                      setUsuarioNombre(selected.nombre);
+                      setPerfil(selected.perfil);
+                    }
+                  }}
+                  className="w-full bg-slate-800 border border-slate-700 text-white py-2 px-3 rounded-md outline-none text-xs font-medium cursor-pointer"
+                >
+                  {USUARIOS_FINANCIERA.map(u => <option key={u.nombre} value={u.nombre}>{u.nombre}</option>)}
+                </select>
+              </div>
+            ) : (
+              <div>
+                <label className="text-[10px] font-bold text-blue-400 uppercase tracking-wider mb-1 block">Simular Rol</label>
+                <select 
+                  value={perfil} 
+                  onChange={(e) => {
+                    setPerfil(e.target.value);
+                    setUsuarioNombre('Usuario Demo');
+                  }}
+                  className="w-full bg-slate-800 border border-slate-700 text-white py-2 px-3 rounded-md outline-none text-xs font-medium cursor-pointer"
+                >
+                  <option value="Funcionario">Funcionario</option>
+                  <option value="Líder">Líder</option>
+                </select>
+              </div>
+            )}
 
           </div>
         </div>
@@ -252,11 +280,11 @@ function App() {
             
             <div className="flex items-center gap-4">
               <div className="text-right hidden md:block">
-                <p className="text-sm font-bold text-slate-700">Usuario Demo</p>
+                <p className="text-sm font-bold text-slate-700">{usuarioNombre}</p>
                 <p className="text-xs text-slate-500">{perfil}</p>
               </div>
-              <div className="w-10 h-10 rounded-full bg-blue-100 border-2 border-blue-200 flex items-center justify-center text-blue-700 font-bold">
-                UD
+              <div className="w-10 h-10 rounded-full bg-blue-100 border-2 border-blue-200 flex items-center justify-center text-blue-700 font-bold text-sm">
+                {usuarioNombre.split(' ').map(n => n[0]).slice(0, 2).join('')}
               </div>
             </div>
           </div>
@@ -681,6 +709,7 @@ function App() {
             <BandejaCompras 
               solicitudes={solicitudesAdmin.filter(s => s.tipoSolicitud === 'Compra')} 
               perfilActual={perfil} 
+              usuarioActual={usuarioNombre}
               onSolicitudActualizada={cargarAdministrativas}
             />
           )}

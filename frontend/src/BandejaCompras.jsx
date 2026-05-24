@@ -4,7 +4,7 @@ import ModalDetalleSolicitud from './ModalDetalleSolicitud';
 import ModalGestionarSolicitud from './ModalGestionarSolicitud';
 import DashboardCompras from './DashboardCompras';
 
-export default function BandejaCompras({ solicitudes, perfilActual, onSolicitudActualizada }) {
+export default function BandejaCompras({ solicitudes, perfilActual, usuarioActual, onSolicitudActualizada }) {
   const [activeTab, setActiveTab] = useState('bandeja'); // 'bandeja' o 'dashboard'
   const [selectedSolicitud, setSelectedSolicitud] = useState(null);
   const [modalGestion, setModalGestion] = useState(null);
@@ -152,6 +152,7 @@ export default function BandejaCompras({ solicitudes, perfilActual, onSolicitudA
         onClose={() => setModalGestion(null)}
         solicitud={modalGestion}
         perfilActual={perfilActual}
+        usuarioActual={usuarioActual}
         onGestionar={handleGestionar}
       />
 
