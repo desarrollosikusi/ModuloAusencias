@@ -166,28 +166,28 @@ export default function ModuloFinanciera({ perfilActual, usuarioActual }) {
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider border-b border-slate-200">
-                    <th className="p-4 font-bold">Folio</th>
-                    <th className="p-4 font-bold">Código SAP</th>
-                    <th className="p-4 font-bold">Código PEP</th>
-                    <th className="p-4 font-bold">Cliente</th>
-                    <th className="p-4 font-bold">Nombre del Proyecto</th>
-                    <th className="p-4 font-bold">PM</th>
-                    <th className="p-4 font-bold">AM</th>
-                    <th className="p-4 font-bold max-w-[200px]">Observaciones</th>
+                    <th className="px-3 py-2 font-bold">Folio</th>
+                    <th className="px-3 py-2 font-bold">Código SAP</th>
+                    <th className="px-3 py-2 font-bold">Código PEP</th>
+                    <th className="px-3 py-2 font-bold">Cliente</th>
+                    <th className="px-3 py-2 font-bold">Nombre del Proyecto</th>
+                    <th className="px-3 py-2 font-bold">PM</th>
+                    <th className="px-3 py-2 font-bold">AM</th>
+                    <th className="px-3 py-2 font-bold max-w-[200px]">Observaciones</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {pepsFiltrados.length > 0 ? (
                     pepsFiltrados.map((pep) => (
                       <tr key={pep.id} className="hover:bg-slate-50 transition-colors">
-                        <td className="p-4 text-sm font-semibold text-slate-700 whitespace-nowrap">{pep.folio}</td>
-                        <td className="p-4 text-sm text-slate-600 whitespace-nowrap">{pep.codigo_sap}</td>
-                        <td className="p-4 text-sm font-medium text-blue-700 whitespace-nowrap bg-blue-50/30">{pep.codigo_pep}</td>
-                        <td className="p-4 text-sm font-medium text-slate-700">{pep.cliente}</td>
-                        <td className="p-4 text-sm text-slate-800">{pep.nombre_proyecto}</td>
-                        <td className="p-4 text-sm text-slate-600">{pep.pm}</td>
-                        <td className="p-4 text-sm text-slate-600">{pep.am}</td>
-                        <td className="p-4 text-xs text-slate-500 italic max-w-[200px] break-words">{pep.observaciones || '-'}</td>
+                        <td className="px-3 py-2 text-xs font-semibold text-slate-700 whitespace-nowrap">{pep.folio}</td>
+                        <td className="px-3 py-2 text-xs text-slate-600 whitespace-nowrap">{pep.codigo_sap}</td>
+                        <td className="px-3 py-2 text-xs font-medium text-blue-700 whitespace-nowrap bg-blue-50/30">{pep.codigo_pep}</td>
+                        <td className="px-3 py-2 text-xs font-medium text-slate-700">{pep.cliente}</td>
+                        <td className="px-3 py-2 text-xs text-slate-800 leading-tight">{pep.nombre_proyecto}</td>
+                        <td className="px-3 py-2 text-xs text-slate-600 leading-tight">{pep.pm}</td>
+                        <td className="px-3 py-2 text-xs text-slate-600 leading-tight">{pep.am}</td>
+                        <td className="px-3 py-2 text-[10px] text-slate-500 italic max-w-[250px] break-words">{pep.observaciones || '-'}</td>
                       </tr>
                     ))
                   ) : (
