@@ -166,8 +166,8 @@ export default function ModuloFinanciera({ perfilActual, usuarioActual }) {
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider border-b border-slate-200">
-                    <th className="px-3 py-2 font-bold w-[4cm] min-w-[4cm] max-w-[4cm]">Folio</th>
-                    <th className="px-3 py-2 font-bold w-[3cm] min-w-[3cm] max-w-[3cm]">Código SAP</th>
+                    <th className="px-3 py-2 font-bold w-[3.5cm] min-w-[3.5cm] max-w-[3.5cm]">Folio</th>
+                    <th className="px-3 py-2 font-bold w-[3.5cm] min-w-[3.5cm] max-w-[3.5cm]">Código SAP</th>
                     <th className="px-3 py-2 font-bold w-[3.5cm] min-w-[3.5cm] max-w-[3.5cm]">Código PEP</th>
                     <th className="px-3 py-2 font-bold">Cliente</th>
                     <th className="px-3 py-2 font-bold">Nombre del Proyecto</th>
@@ -180,8 +180,8 @@ export default function ModuloFinanciera({ perfilActual, usuarioActual }) {
                   {pepsFiltrados.length > 0 ? (
                     pepsFiltrados.map((pep) => (
                       <tr key={pep.id} className="hover:bg-slate-50 transition-colors">
-                        <td className="px-3 py-2 text-xs font-semibold text-slate-700 whitespace-nowrap w-[4cm] min-w-[4cm] max-w-[4cm] overflow-hidden text-ellipsis">{pep.folio}</td>
-                        <td className="px-3 py-2 text-xs text-slate-600 whitespace-nowrap w-[3cm] min-w-[3cm] max-w-[3cm] overflow-hidden text-ellipsis">{pep.codigo_sap}</td>
+                        <td className="px-3 py-2 text-xs font-semibold text-slate-700 whitespace-nowrap w-[3.5cm] min-w-[3.5cm] max-w-[3.5cm] overflow-hidden text-ellipsis">{pep.folio}</td>
+                        <td className="px-3 py-2 text-xs text-slate-600 whitespace-nowrap w-[3.5cm] min-w-[3.5cm] max-w-[3.5cm] overflow-hidden text-ellipsis">{pep.codigo_sap}</td>
                         <td className="px-3 py-2 text-xs font-medium text-blue-700 whitespace-nowrap bg-blue-50/30 w-[3.5cm] min-w-[3.5cm] max-w-[3.5cm] overflow-hidden text-ellipsis">{pep.codigo_pep}</td>
                         <td className="px-3 py-2 text-xs font-medium text-slate-700">{pep.cliente}</td>
                         <td className="px-3 py-2 text-xs text-slate-800 leading-tight">{pep.nombre_proyecto}</td>
