@@ -10,34 +10,11 @@ const DOCUMENTOS_FINANCIERA_MOCK = [
 
 const TODOS_DOCUMENTOS = [...documentosReales, ...DOCUMENTOS_FINANCIERA_MOCK];
 
-const PROCESOS_OPERACIONES = ['CX', 'Delivery', 'Proyectos', 'Servicios'];
-const CARPETAS_ESPERADAS = ['1. Publico', '2. Interno/Procedimiento', '2. Interno/Registros'];
-
 export default function ModuloDocumental({ intranet, usuarioCargo }) {
   const [searchTerm, setSearchTerm] = useState('');
 
   const documentosExtendidos = useMemo(() => {
     const docs = [...TODOS_DOCUMENTOS];
-    let nextId = 5000;
-    
-    PROCESOS_OPERACIONES.forEach(proceso => {
-        CARPETAS_ESPERADAS.forEach(carpeta => {
-            // Check if this exact combination exists in our parsed docs
-            const existe = docs.some(d => d.intranet === 'Operaciones' && d.proceso === proceso && d.carpeta === carpeta);
-            if (!existe) {
-                docs.push({
-                    id: nextId++,
-                    intranet: 'Operaciones',
-                    proceso: proceso,
-                    carpeta: carpeta,
-                    documento: null,
-                    version: "-",
-                    fecha: "-",
-                    descripcion: "-"
-                });
-            }
-        });
-    });
     // sort alphabetically by proceso then carpeta to keep it organized
     docs.sort((a, b) => {
         if (a.intranet !== b.intranet) return a.intranet.localeCompare(b.intranet);
