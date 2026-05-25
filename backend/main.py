@@ -36,7 +36,7 @@ def calcular_dias_habiles(fecha_inicio: datetime, fecha_fin: Optional[datetime] 
     fecha_actual = fecha_inicio.date()
     hoy = fecha_fin.date() if fecha_fin else datetime.utcnow().date()
     
-    while fecha_actual <= hoy:
+    while fecha_actual < hoy:
         # 5 es Sábado, 6 es Domingo
         if fecha_actual.weekday() < 5 and fecha_actual not in co_holidays:
             dias_habiles += 1
