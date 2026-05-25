@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, AlertCircle, CheckCircle, Clock, UserCircle, Briefcase, FileText, LayoutDashboard, Users, ArrowRight, CreditCard, Truck, TrendingUp, Building } from 'lucide-react';
+import { Calendar, AlertCircle, CheckCircle, Clock, UserCircle, Briefcase, FileText, LayoutDashboard, Users, ArrowRight, CreditCard, Truck, TrendingUp, Building, BookOpen } from 'lucide-react';
 import FormularioAusencia from './FormularioAusencia';
 import FormularioAdministrativa from './FormularioAdministrativa';
 import BandejaCompras from './BandejaCompras';
+import ModuloDocumental from './ModuloDocumental';
 import ModalDetalleSolicitud from './ModalDetalleSolicitud';
 
 const EQUIPOS = [
@@ -199,6 +200,14 @@ function App() {
             Gestión Ausencias
           </button>
           
+          <button 
+            onClick={() => setCurrentModule('documental')}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 ${currentModule === 'documental' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'}`}
+          >
+            <BookOpen size={20} />
+            Gestión Documental
+          </button>
+          
           {intranet === 'Operaciones' && (
             <button 
               onClick={() => setCurrentModule('administrativa')}
@@ -299,6 +308,7 @@ function App() {
             <div>
               <h2 className="text-2xl font-bold text-slate-800">
                 {currentModule === 'ausencias' && 'Módulo de Ausencias Laborales'}
+                {currentModule === 'documental' && 'Módulo de Gestión Documental'}
                 {currentModule === 'administrativa' && 'Módulo de Gestión Administrativa'}
                 {currentModule === 'compras' && 'Módulo de Gestión de Compras'}
                 {currentModule === 'facturacion' && 'Módulo de Gestión de Facturación'}
@@ -754,6 +764,10 @@ function App() {
                <h2 className="text-2xl font-bold text-slate-700">Módulo Exclusivo Financiero</h2>
                <p className="mt-2 text-slate-500 text-center max-w-md">Estás simulando la Intranet de la Dirección Financiera con el rol de <strong>{perfil}</strong>.</p>
              </div>
+          )}
+
+          {currentModule === 'documental' && (
+            <ModuloDocumental intranet={intranet} usuarioCargo={usuarioCargo} />
           )}
           
           <ModalDetalleSolicitud 
