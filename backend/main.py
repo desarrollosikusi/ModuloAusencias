@@ -28,15 +28,15 @@ app.add_middleware(
 # Utilidad para calcular días hábiles (Lunes-Viernes, sin festivos en Colombia)
 co_holidays = holidays.Colombia()
 
-def calcular_dias_habiles(fecha_inicio: datetime) -> int:
+def calcular_dias_habiles(fecha_inicio: datetime, fecha_fin: Optional[datetime] = None) -> int:
     # Si acaba de ser creada, son 0 días
     if not fecha_inicio:
         return 0
     dias_habiles = 0
     fecha_actual = fecha_inicio.date()
-    hoy = datetime.utcnow().date()
+    hoy = fecha_fin.date() if fecha_fin else datetime.utcnow().date()
     
-    while fecha_actual < hoy:
+    while fecha_actual <= hoy:
         # 5 es Sábado, 6 es Domingo
         if fecha_actual.weekday() < 5 and fecha_actual not in co_holidays:
             dias_habiles += 1
@@ -154,7 +154,7 @@ def crear_solicitud_admin(
         "dealId": db_solicitud.deal_id,
         "estado": db_solicitud.estado,
         "gestor": db_solicitud.gestor,
-        "diasHabiles": calcular_dias_habiles(db_solicitud.fecha_creacion),
+        "diasHabiles": calcular_dias_habiles(db_solicitud.fecha_creacion, db_solicitud.fecha_cierre),
         "rutaCotizacion": db_solicitud.ruta_cotizacion,
         "fechaCierre": str(db_solicitud.fecha_cierre) if db_solicitud.fecha_cierre else None,
         "fechaOrdenCompra": str(db_solicitud.fecha_orden_compra) if db_solicitud.fecha_orden_compra else None,
@@ -203,7 +203,7 @@ def gestionar_solicitud(solicitud_id: int, datos: SolicitudAdminGestionar, db: S
         "dealId": solicitud.deal_id,
         "estado": solicitud.estado,
         "gestor": solicitud.gestor,
-        "diasHabiles": calcular_dias_habiles(solicitud.fecha_creacion),
+        "diasHabiles": calcular_dias_habiles(solicitud.fecha_creacion, solicitud.fecha_cierre),
         "rutaCotizacion": solicitud.ruta_cotizacion,
         "fechaCierre": str(solicitud.fecha_cierre) if solicitud.fecha_cierre else None,
         "fechaOrdenCompra": str(solicitud.fecha_orden_compra) if solicitud.fecha_orden_compra else None,
@@ -235,7 +235,7 @@ def get_solicitudes_admin(db: Session = Depends(get_db)):
             "dealId": sol.deal_id,
             "estado": sol.estado,
             "gestor": sol.gestor,
-            "diasHabiles": calcular_dias_habiles(sol.fecha_creacion),
+            "diasHabiles": calcular_dias_habiles(sol.fecha_creacion, sol.fecha_cierre),
             "rutaCotizacion": sol.ruta_cotizacion,
             "fechaCierre": str(sol.fecha_cierre) if sol.fecha_cierre else None,
             "fechaOrdenCompra": str(sol.fecha_orden_compra) if sol.fecha_orden_compra else None,
