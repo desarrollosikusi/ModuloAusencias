@@ -89,47 +89,47 @@ export default function ModuloDocumental({ intranet, usuarioCargo }) {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider border-b border-slate-200">
-                <th className="p-4 font-bold">Proceso</th>
-                <th className="p-4 font-bold">Carpeta Interna</th>
-                <th className="p-4 font-bold">Documento</th>
-                <th className="p-4 font-bold">Version</th>
-                <th className="p-4 font-bold">Fecha</th>
-                <th className="p-4 font-bold">Descripcion de IA</th>
-                <th className="p-4 font-bold text-center">Accion</th>
+                <th className="p-3 font-bold">Proceso</th>
+                <th className="p-3 font-bold">Carpeta Interna</th>
+                <th className="p-3 font-bold">Documento</th>
+                <th className="p-3 font-bold">Version</th>
+                <th className="p-3 font-bold">Fecha</th>
+                <th className="p-3 font-bold">Descripcion de IA</th>
+                <th className="p-3 font-bold text-center">Accion</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {documentosVisibles.length > 0 ? (
                 documentosVisibles.map((doc) => (
                   <tr key={doc.id} className="hover:bg-blue-50/50 transition-colors">
-                    <td className="p-4 text-sm font-medium text-slate-700">
-                      <span className={`px-2 py-1 rounded text-xs font-bold ${doc.intranet === 'Operaciones' ? 'bg-indigo-100 text-indigo-700' : 'bg-emerald-100 text-emerald-700'}`}>
+                    <td className="p-3 text-xs font-medium text-slate-700">
+                      <span className={`px-2 py-1 rounded text-[10px] font-bold ${doc.intranet === 'Operaciones' ? 'bg-indigo-100 text-indigo-700' : 'bg-emerald-100 text-emerald-700'}`}>
                         {doc.proceso}
                       </span>
                     </td>
-                    <td className="p-4 text-sm text-slate-600">
+                    <td className="p-3 text-xs text-slate-600">
                       <div className="flex items-center gap-1.5 font-medium">
-                        <FolderOpen size={14} className="text-yellow-500"/>
+                        <FolderOpen size={14} className="text-yellow-500 shrink-0"/>
                         {doc.carpeta}
                       </div>
                     </td>
-                    <td className="p-4 text-sm font-semibold max-w-[200px] truncate" title={doc.documento}>
+                    <td className="p-3 text-xs font-semibold break-words max-w-[300px]">
                       {doc.documento ? (
                         <span className="text-slate-800">{doc.documento}</span>
                       ) : (
                         <span className="text-red-500 font-bold">No se registran documentos en la ruta</span>
                       )}
                     </td>
-                    <td className="p-4 text-sm font-medium text-slate-500">
+                    <td className="p-3 text-xs font-medium text-slate-500 whitespace-nowrap">
                       {doc.version}
                     </td>
-                    <td className="p-4 text-sm text-slate-500 whitespace-nowrap">
+                    <td className="p-3 text-xs text-slate-500 whitespace-nowrap">
                       {doc.fecha}
                     </td>
-                    <td className="p-4 text-xs text-slate-500 italic max-w-[200px] truncate" title={doc.descripcion || doc["Descripción del Documento"]}>
+                    <td className="p-3 text-xs text-slate-500 italic max-w-[150px] truncate" title={doc.descripcion || doc["Descripción del Documento"]}>
                       {doc.descripcion || doc["Descripción del Documento"]}
                     </td>
-                    <td className="p-4 text-center">
+                    <td className="p-3 text-center">
                       {doc.documento && (
                         <button 
                           onClick={() => alert(`Simulando descarga de: ${doc.documento}`)}
