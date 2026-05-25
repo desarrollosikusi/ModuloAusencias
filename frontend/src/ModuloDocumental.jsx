@@ -36,7 +36,7 @@ export default function ModuloDocumental({ intranet, usuarioCargo }) {
           return true; 
         } else if (usuarioCargo === 'Gerente de Proyectos y Servicios') {
           procesosPermitidos.push('CX', 'Proyectos', 'Servicios');
-        } else if (usuarioCargo === 'Gerente de Ingenieria') {
+        } else if (usuarioCargo && usuarioCargo.includes('Gerente de Ingenier')) {
           procesosPermitidos.push('Delivery');
         } else {
           return false;
