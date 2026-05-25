@@ -18,11 +18,25 @@ export default function ModalNuevoPEP({ onClose, onSave }) {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: name === 'vigencia' ? parseInt(value) || new Date().getFullYear() : value
-    }));
+    
+    setFormData(prev => {
+      const updates = { [name]: name === 'vigencia' ? parseInt(value) || new Date().getFullYear() : value };
+      
+      // Regla de negocio: Si observación es anticipada, PM debe ser "Pendiente por asignar PM"
+      if (name === 'observaciones') {
+        if (value === 'Compra anticipada' || value === 'Facturación anticipada') {
+          updates.pm = 'Pendiente por asignar PM';
+        } else if (prev.pm === 'Pendiente por asignar PM') {
+          // Si cambia a otra opción, vaciar el campo PM para que lo llenen
+          updates.pm = '';
+        }
+      }
+      
+      return { ...prev, ...updates };
+    });
   };
+
+  const isAnticipada = formData.observaciones === 'Compra anticipada' || formData.observaciones === 'Facturación anticipada';
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -81,7 +95,7 @@ export default function ModalNuevoPEP({ onClose, onSave }) {
             </div>
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-1">PM (Project Manager) *</label>
-              <input type="text" name="pm" required value={formData.pm} onChange={handleChange} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Nombre del PM" />
+              <input type="text" name="pm" required value={formData.pm} onChange={handleChange} disabled={isAnticipada} className={`w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none ${isAnticipada ? 'bg-slate-100 text-slate-500' : ''}`} placeholder="Nombre del PM" />
             </div>
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-1">AM (Account Manager) *</label>
@@ -94,8 +108,13 @@ export default function ModalNuevoPEP({ onClose, onSave }) {
           </div>
           
           <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-1">Observaciones</label>
-            <textarea name="observaciones" rows="3" value={formData.observaciones} onChange={handleChange} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Opcional"></textarea>
+            <label className="block text-sm font-semibold text-slate-700 mb-1">Observaciones *</label>
+            <select name="observaciones" required value={formData.observaciones} onChange={handleChange} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+              <option value="" disabled>Seleccione una opción</option>
+              <option value="No registra observación">No registra observación</option>
+              <option value="Compra anticipada">Compra anticipada</option>
+              <option value="Facturación anticipada">Facturación anticipada</option>
+            </select>
           </div>
 
           <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">

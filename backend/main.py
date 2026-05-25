@@ -289,6 +289,19 @@ def crear_pep(pep: PepIkusiCreate, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(db_pep)
     
+    # Crear Solicitud Administrativa automática si aplica
+    if pep.observaciones in ["Compra anticipada", "Facturación anticipada"] and pep.pm == "Pendiente por asignar PM":
+        tipo = "Compra" if pep.observaciones == "Compra anticipada" else "Facturación"
+        
+        db_solicitud = SolicitudAdministrativaDB(
+            tipo_solicitud=tipo,
+            pep=pep.codigo_pep,
+            observaciones=f"Generado automáticamente desde creación de PEP ({pep.observaciones})",
+            estado="Abierto"
+        )
+        db.add(db_solicitud)
+        db.commit()
+    
     return {
         **db_pep.__dict__,
         "fecha_creacion": str(db_pep.fecha_creacion)
