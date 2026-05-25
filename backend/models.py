@@ -34,3 +34,19 @@ class SolicitudAdministrativaDB(Base):
     cisco_quote = Column(String, nullable=True)
     cisco_so = Column(String, nullable=True)
     cisco_web_order_final = Column(String, nullable=True)
+
+class PepIkusiDB(Base):
+    __tablename__ = "peps_ikusi"
+
+    id = Column(Integer, primary_key=True, index=True)
+    folio = Column(String, index=True, nullable=True)
+    codigo_sap = Column(String, nullable=True)
+    codigo_pep = Column(String, nullable=True)
+    cliente = Column(String, nullable=True)
+    nombre_proyecto = Column(String, nullable=True)
+    pm = Column(String, nullable=True)
+    am = Column(String, nullable=True)
+    observaciones = Column(String, nullable=True)
+    vigencia = Column(Integer, nullable=True) # Año de vigencia
+    fecha_creacion = Column(DateTime, default=datetime.utcnow)
+

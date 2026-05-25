@@ -88,6 +88,24 @@ class SolicitudAdminGestionar(BaseModel):
     cisco_so: Optional[str] = None
     cisco_web_order_final: Optional[str] = None
 
+class PepIkusiCreate(BaseModel):
+    folio: Optional[str] = None
+    codigo_sap: Optional[str] = None
+    codigo_pep: Optional[str] = None
+    cliente: Optional[str] = None
+    nombre_proyecto: Optional[str] = None
+    pm: Optional[str] = None
+    am: Optional[str] = None
+    observaciones: Optional[str] = None
+    vigencia: Optional[int] = None
+
+class PepIkusiResponse(PepIkusiCreate):
+    id: int
+    fecha_creacion: str
+
+    class Config:
+        from_attributes = True
+
 # Directorio de subida de archivos (Volumen persistente de Docker)
 UPLOAD_DIR = "/app/uploads"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
@@ -246,4 +264,42 @@ def get_solicitudes_admin(db: Session = Depends(get_db)):
             "ciscoSo": sol.cisco_so,
             "ciscoWebOrderFinal": sol.cisco_web_order_final
         })
+    return resultado
+
+# ---------------------------------------------------------
+# Endpoints PEPs Ikusi
+# ---------------------------------------------------------
+
+from models import PepIkusiDB
+
+@app.post("/api/peps", response_model=PepIkusiResponse)
+def crear_pep(pep: PepIkusiCreate, db: Session = Depends(get_db)):
+    db_pep = PepIkusiDB(
+        folio=pep.folio,
+        codigo_sap=pep.codigo_sap,
+        codigo_pep=pep.codigo_pep,
+        cliente=pep.cliente,
+        nombre_proyecto=pep.nombre_proyecto,
+        pm=pep.pm,
+        am=pep.am,
+        observaciones=pep.observaciones,
+        vigencia=pep.vigencia or datetime.utcnow().year
+    )
+    db.add(db_pep)
+    db.commit()
+    db.refresh(db_pep)
+    
+    return {
+        **db_pep.__dict__,
+        "fecha_creacion": str(db_pep.fecha_creacion)
+    }
+
+@app.get("/api/peps", response_model=List[PepIkusiResponse])
+def get_peps(db: Session = Depends(get_db)):
+    peps = db.query(PepIkusiDB).order_by(PepIkusiDB.id.desc()).all()
+    resultado = []
+    for pep in peps:
+        data = {k: v for k, v in pep.__dict__.items() if not k.startswith('_')}
+        data["fecha_creacion"] = str(pep.fecha_creacion)
+        resultado.append(data)
     return resultado

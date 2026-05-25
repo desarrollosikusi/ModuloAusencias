@@ -5,6 +5,7 @@ import FormularioAdministrativa from './FormularioAdministrativa';
 import BandejaCompras from './BandejaCompras';
 import ModuloDocumental from './ModuloDocumental';
 import ModalDetalleSolicitud from './ModalDetalleSolicitud';
+import ModuloFinanciera from './ModuloFinanciera';
 
 const EQUIPOS = [
   "Administrativa", "Comercial", "Equipo Bancolombia", "Ingeniería Delivery", 
@@ -762,12 +763,16 @@ function App() {
             />
           )}
 
-          {['facturacion', 'logistica', 'financiera'].includes(currentModule) && (
+          {['facturacion', 'logistica'].includes(currentModule) && (
              <div className="flex flex-col items-center justify-center py-20 text-slate-400 bg-white rounded-xl border border-slate-200 shadow-sm mt-8">
                <CreditCard size={64} className="mb-4 opacity-30 text-blue-600"/>
                <h2 className="text-2xl font-bold text-slate-700">Módulo Exclusivo Financiero</h2>
                <p className="mt-2 text-slate-500 text-center max-w-md">Estás simulando la Intranet de la Dirección Financiera con el rol de <strong>{perfil}</strong>.</p>
              </div>
+          )}
+
+          {currentModule === 'financiera' && (
+            <ModuloFinanciera perfilActual={perfil} usuarioActual={usuarioNombre} />
           )}
 
           {currentModule === 'documental' && (
