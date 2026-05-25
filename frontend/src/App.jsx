@@ -194,49 +194,53 @@ function App() {
           {/* Módulos comunes / Operaciones */}
           <button 
             onClick={() => setCurrentModule('ausencias')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 ${currentModule === 'ausencias' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'}`}
+            className={`w-full flex items-center justify-start gap-3 px-3 py-2.5 rounded-lg text-xs font-semibold transition-all duration-200 ${currentModule === 'ausencias' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'}`}
           >
-            <Calendar size={20} />
-            Gestión Ausencias
+            <Calendar className="shrink-0" size={18} />
+            <span className="truncate">Gestión Ausencias</span>
           </button>
           
           <button 
             onClick={() => setCurrentModule('documental')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 ${currentModule === 'documental' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'}`}
+            className={`w-full flex items-center justify-start gap-3 px-3 py-2.5 rounded-lg text-xs font-semibold transition-all duration-200 ${currentModule === 'documental' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'}`}
           >
-            <BookOpen size={20} />
-            Gestión Documental
+            <BookOpen className="shrink-0" size={18} />
+            <span className="truncate">Gestión Documental</span>
           </button>
           
           {intranet === 'Operaciones' && (
             <button 
               onClick={() => setCurrentModule('administrativa')}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 ${currentModule === 'administrativa' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'}`}
+              className={`w-full flex items-center justify-start gap-3 px-3 py-2.5 rounded-lg text-xs font-semibold transition-all duration-200 ${currentModule === 'administrativa' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'}`}
             >
-              <Briefcase size={20} />
-              Gestión Administrativa
+              <Briefcase className="shrink-0" size={18} />
+              <span className="truncate">Gestión Administrativa</span>
             </button>
           )}
 
           {/* Módulos Intranet Financiera */}
           {intranet === 'Financiera' && canSee('compras') && (
-            <button onClick={() => setCurrentModule('compras')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 ${currentModule === 'compras' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:bg-slate-800'}`}>
-              <CreditCard size={20} /> Gestión Compras
+            <button onClick={() => setCurrentModule('compras')} className={`w-full flex items-center justify-start gap-3 px-3 py-2.5 rounded-lg text-xs font-semibold transition-all duration-200 ${currentModule === 'compras' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:bg-slate-800'}`}>
+              <CreditCard className="shrink-0" size={18} />
+              <span className="truncate">Gestión Compras</span>
             </button>
           )}
           {intranet === 'Financiera' && canSee('facturacion') && (
-            <button onClick={() => setCurrentModule('facturacion')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 ${currentModule === 'facturacion' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:bg-slate-800'}`}>
-              <FileText size={20} /> Gestión Facturación
+            <button onClick={() => setCurrentModule('facturacion')} className={`w-full flex items-center justify-start gap-3 px-3 py-2.5 rounded-lg text-xs font-semibold transition-all duration-200 ${currentModule === 'facturacion' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:bg-slate-800'}`}>
+              <FileText className="shrink-0" size={18} />
+              <span className="truncate">Gestión Facturación</span>
             </button>
           )}
           {intranet === 'Financiera' && canSee('logistica') && (
-            <button onClick={() => setCurrentModule('logistica')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 ${currentModule === 'logistica' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:bg-slate-800'}`}>
-              <Truck size={20} /> Gestión Logística
+            <button onClick={() => setCurrentModule('logistica')} className={`w-full flex items-center justify-start gap-3 px-3 py-2.5 rounded-lg text-xs font-semibold transition-all duration-200 ${currentModule === 'logistica' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:bg-slate-800'}`}>
+              <Truck className="shrink-0" size={18} />
+              <span className="truncate">Gestión Logística</span>
             </button>
           )}
           {intranet === 'Financiera' && canSee('financiera') && (
-            <button onClick={() => setCurrentModule('financiera')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 ${currentModule === 'financiera' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:bg-slate-800'}`}>
-              <TrendingUp size={20} /> Gestión Financiera
+            <button onClick={() => setCurrentModule('financiera')} className={`w-full flex items-center justify-start gap-3 px-3 py-2.5 rounded-lg text-xs font-semibold transition-all duration-200 ${currentModule === 'financiera' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:bg-slate-800'}`}>
+              <TrendingUp className="shrink-0" size={18} />
+              <span className="truncate">Gestión Financiera</span>
             </button>
           )}
         </nav>
