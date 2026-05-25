@@ -1,4 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import os
+
+APP_JSX = """import React, { useState, useEffect } from 'react';
 import { 
   Calendar, BookOpen, Briefcase, CreditCard, FileText, Truck, TrendingUp, Menu, X 
 } from 'lucide-react';
@@ -52,6 +54,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [selectedEquipo, setSelectedEquipo] = useState('CX');
   const [ausencias, setAusencias] = useState([]);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const usuariosDisponibles = intranet === 'Operaciones' ? USUARIOS_OPERACIONES : USUARIOS_FINANCIERA;
 
@@ -273,3 +276,165 @@ export default function App() {
     </div>
   );
 }
+"""
+
+MODULO_DOCUMENTAL_JSX = """import React, { useState, useMemo } from 'react';
+import { FolderOpen, FileText, Search, Download, ExternalLink } from 'lucide-react';
+import documentosReales from './documentos.json';
+
+const DOCUMENTOS_FINANCIERA_MOCK = [
+  { id: 1001, intranet: "Financiera", proceso: "Presupuestos", carpeta: "1. Publico", documento: "Plantilla_Presupuesto.xlsx", version: "V1.0", fecha: "2026-01-15", descripcion: "Plantilla genérica" },
+  { id: 1002, intranet: "Financiera", proceso: "Contabilidad", carpeta: "2. Interno/Procedimiento", documento: "Manual_Cierre.docx", version: "V3.1", fecha: "2026-02-10", descripcion: "Cierre contable" },
+  { id: 1003, intranet: "Financiera", proceso: "Auditoria", carpeta: "3. Interno/Registros", documento: null, version: "-", fecha: "-", descripcion: "-" }
+];
+
+const TODOS_DOCUMENTOS = [...documentosReales, ...DOCUMENTOS_FINANCIERA_MOCK];
+
+export default function ModuloDocumental({ intranet, usuarioCargo }) {
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const documentosVisibles = useMemo(() => {
+    return TODOS_DOCUMENTOS.filter(doc => {
+      if (doc.intranet !== intranet) return false;
+
+      if (intranet === 'Financiera') return true;
+
+      if (intranet === 'Operaciones') {
+        const procesosPermitidos = [];
+        if (usuarioCargo === 'Director de Operaciones' || usuarioCargo === 'Coordinadora Operativa') {
+          return true; 
+        } else if (usuarioCargo === 'Gerente de Proyectos y Servicios') {
+          procesosPermitidos.push('CX', 'Proyectos', 'Servicios');
+        } else if (usuarioCargo === 'Gerente de Ingenieria') {
+          procesosPermitidos.push('Delivery');
+        } else {
+          return false;
+        }
+        return procesosPermitidos.includes(doc.proceso);
+      }
+      return false;
+    }).filter(doc => {
+      if (!searchTerm) return true;
+      const term = searchTerm.toLowerCase();
+      return (
+        (doc.documento && doc.documento.toLowerCase().includes(term)) ||
+        (doc.carpeta && doc.carpeta.toLowerCase().includes(term)) ||
+        (doc.proceso && doc.proceso.toLowerCase().includes(term))
+      );
+    });
+  }, [intranet, usuarioCargo, searchTerm]);
+
+  return (
+    <div className="max-w-7xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
+      
+      <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+            <FolderOpen size={24} className="text-blue-600"/> Gestion Documental
+          </h2>
+          <p className="text-sm text-slate-500 mt-1">
+            Explora la documentacion vigente de los Sistemas de Gestion Integrados (SGI).
+          </p>
+          <div className="mt-2 text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-1 rounded inline-flex items-center gap-1">
+            <ExternalLink size={12}/> Origen: SharePoint SGI Colombia (Sincronizado via IA)
+          </div>
+        </div>
+        
+        <div className="relative w-full md:w-72">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <Search size={16} className="text-slate-400" />
+          </div>
+          <input
+            type="text"
+            placeholder="Buscar documento..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-9 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm text-slate-700 bg-slate-50"
+          />
+        </div>
+      </div>
+
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="p-4 border-b border-slate-200 bg-slate-50 flex items-center gap-2">
+          <FileText size={18} className="text-slate-600"/>
+          <h3 className="font-bold text-slate-700">Documentacion Vigente ({documentosVisibles.length})</h3>
+        </div>
+        
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider border-b border-slate-200">
+                <th className="p-4 font-bold">Proceso</th>
+                <th className="p-4 font-bold">Carpeta Interna</th>
+                <th className="p-4 font-bold">Documento</th>
+                <th className="p-4 font-bold">Version</th>
+                <th className="p-4 font-bold">Fecha</th>
+                <th className="p-4 font-bold">Descripcion de IA</th>
+                <th className="p-4 font-bold text-center">Accion</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {documentosVisibles.length > 0 ? (
+                documentosVisibles.map((doc) => (
+                  <tr key={doc.id} className="hover:bg-blue-50/50 transition-colors">
+                    <td className="p-4 text-sm font-medium text-slate-700">
+                      <span className={`px-2 py-1 rounded text-xs font-bold ${doc.intranet === 'Operaciones' ? 'bg-indigo-100 text-indigo-700' : 'bg-emerald-100 text-emerald-700'}`}>
+                        {doc.proceso}
+                      </span>
+                    </td>
+                    <td className="p-4 text-sm text-slate-600">
+                      <div className="flex items-center gap-1.5 font-medium">
+                        <FolderOpen size={14} className="text-yellow-500"/>
+                        {doc.carpeta}
+                      </div>
+                    </td>
+                    <td className="p-4 text-sm font-semibold max-w-[200px] truncate" title={doc.documento}>
+                      {doc.documento ? (
+                        <span className="text-slate-800">{doc.documento}</span>
+                      ) : (
+                        <span className="text-red-500 font-bold">No se registran documentos en la ruta</span>
+                      )}
+                    </td>
+                    <td className="p-4 text-sm font-medium text-slate-500">
+                      {doc.version}
+                    </td>
+                    <td className="p-4 text-sm text-slate-500 whitespace-nowrap">
+                      {doc.fecha}
+                    </td>
+                    <td className="p-4 text-xs text-slate-500 italic max-w-[200px] truncate" title={doc.descripcion}>
+                      {doc.descripcion || doc["Descripción del Documento"]}
+                    </td>
+                    <td className="p-4 text-center">
+                      {doc.documento && (
+                        <button 
+                          onClick={() => alert(`Simulando descarga de: ${doc.documento}`)}
+                          className="text-blue-600 hover:text-blue-800 hover:bg-blue-50 p-2 rounded-full transition-colors"
+                          title="Descargar Documento"
+                        >
+                          <Download size={18} />
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="7" className="p-8 text-center text-slate-500">
+                    No se encontraron documentos vigentes para tu perfil o criterio de busqueda.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+"""
+
+with open(r'C:\Users\samirna.beltran\gestion_ausencias\frontend\src\App.jsx', 'w', encoding='utf-8') as f:
+    f.write(APP_JSX)
+
+with open(r'C:\Users\samirna.beltran\gestion_ausencias\frontend\src\ModuloDocumental.jsx', 'w', encoding='utf-8') as f:
+    f.write(MODULO_DOCUMENTAL_JSX)
