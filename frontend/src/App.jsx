@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   Calendar, BookOpen, Briefcase, CreditCard, FileText, Truck, TrendingUp, Menu, X 
 } from 'lucide-react';
-import { MOCK_TEAM_ABSENCES } from './BandejaAprobaciones';
+
 import ModuloAusencias from './ModuloAusencias';
 import ModuloDocumental from './ModuloDocumental';
 
