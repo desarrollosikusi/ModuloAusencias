@@ -2,13 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { FolderOpen, FileText, Search, Download, ExternalLink } from 'lucide-react';
 import documentosReales from './documentos.json';
 
-const DOCUMENTOS_FINANCIERA_MOCK = [
-  { id: 1001, intranet: "Financiera", proceso: "Presupuestos", carpeta: "1. Publico", documento: "Plantilla_Presupuesto.xlsx", version: "V1.0", fecha: "2026-01-15", descripcion: "Plantilla generica" },
-  { id: 1002, intranet: "Financiera", proceso: "Contabilidad", carpeta: "2. Interno/Procedimiento", documento: "Manual_Cierre.docx", version: "V3.1", fecha: "2026-02-10", descripcion: "Cierre contable" },
-  { id: 1003, intranet: "Financiera", proceso: "Auditoria", carpeta: "3. Interno/Registros", documento: null, version: "-", fecha: "-", descripcion: "-" }
-];
-
-const TODOS_DOCUMENTOS = [...documentosReales, ...DOCUMENTOS_FINANCIERA_MOCK];
+const TODOS_DOCUMENTOS = [...documentosReales];
 
 export default function ModuloDocumental({ intranet, usuarioCargo }) {
   const [searchTerm, setSearchTerm] = useState('');
