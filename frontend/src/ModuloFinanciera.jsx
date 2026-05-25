@@ -166,7 +166,7 @@ export default function ModuloFinanciera({ perfilActual, usuarioActual }) {
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider border-b border-slate-200">
-                    <th className="px-3 py-2 font-bold w-8 max-w-[40px]">Folio</th>
+                    <th className="px-3 py-2 font-bold w-[2cm] min-w-[2cm] max-w-[2cm]">Folio</th>
                     <th className="px-3 py-2 font-bold">Código SAP</th>
                     <th className="px-3 py-2 font-bold">Código PEP</th>
                     <th className="px-3 py-2 font-bold">Cliente</th>
@@ -180,7 +180,7 @@ export default function ModuloFinanciera({ perfilActual, usuarioActual }) {
                   {pepsFiltrados.length > 0 ? (
                     pepsFiltrados.map((pep) => (
                       <tr key={pep.id} className="hover:bg-slate-50 transition-colors">
-                        <td className="px-3 py-2 text-xs font-semibold text-slate-700 whitespace-nowrap w-8 max-w-[40px] overflow-hidden text-ellipsis">{pep.folio}</td>
+                        <td className="px-3 py-2 text-xs font-semibold text-slate-700 whitespace-nowrap w-[2cm] min-w-[2cm] max-w-[2cm] overflow-hidden text-ellipsis">{pep.folio}</td>
                         <td className="px-3 py-2 text-xs text-slate-600 whitespace-nowrap">{pep.codigo_sap}</td>
                         <td className="px-3 py-2 text-xs font-medium text-blue-700 whitespace-nowrap bg-blue-50/30">{pep.codigo_pep}</td>
                         <td className="px-3 py-2 text-xs font-medium text-slate-700">{pep.cliente}</td>
