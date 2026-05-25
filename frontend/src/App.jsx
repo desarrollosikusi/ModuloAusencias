@@ -10,14 +10,40 @@ const EQUIPOS = [
   "Ingeniería Preventa", "Project Managers", "Service Delivery Managers", "Soporte"
 ];
 
+const ROLES_POR_CARGO_FINANCIERA = {
+  "Director Financiero": "Director Financiero",
+  "Líder Gestión Cadena de Suministro": "Gestor Compras",
+  "Analista de Recaudo": "Gestor Compras",
+  "Especialista Comercio Exterior": "Gestor Logística",
+  "Analista de Facturación y Recaudo": "Gestor Facturación",
+  "Analista Controlling": "Gestor Financiero",
+  "Controller": "Gestor Financiero"
+};
+
+const ROLES_POR_CARGO_OPERACIONES = {
+  "Director de Operaciones": "Líder",
+  "Service Delivery Manager": "Líder",
+  "Gerente de Proyectos y Servicios": "Líder",
+  "Gerente de Ingeniería": "Líder",
+  "Coordinadora Operativa": "Funcionario"
+};
+
 const USUARIOS_FINANCIERA = [
-  { nombre: "JUAN CAMILO RODRIGUEZ MORALES", cargo: "Director Financiero", perfil: "Director Financiero" },
-  { nombre: "JULIAN ANDRES QUINTERO QUINTERO", cargo: "Líder Gestión Cadena de Suministro", perfil: "Gestor Compras" },
-  { nombre: "MARYI KATALINA RODRIGUEZ", cargo: "Analista de Recaudo", perfil: "Gestor Compras" },
-  { nombre: "MIGUEL ANGEL ROJAS LEON", cargo: "Especialista Comercio Exterior", perfil: "Gestor Logística" },
-  { nombre: "GINNA MARCELA MOGOLLON PULIDO", cargo: "Analista de Facturación y Recaudo", perfil: "Gestor Facturación" },
-  { nombre: "JENNIFER VALENCIA CASTAÑO", cargo: "Analista Controlling", perfil: "Gestor Financiero" },
-  { nombre: "IVAN STIVEN BONILLA RAMIREZ", cargo: "Controller", perfil: "Gestor Financiero" }
+  { nombre: "JUAN CAMILO RODRIGUEZ MORALES", cargo: "Director Financiero" },
+  { nombre: "JULIAN ANDRES QUINTERO QUINTERO", cargo: "Líder Gestión Cadena de Suministro" },
+  { nombre: "MARYI KATALINA RODRIGUEZ", cargo: "Analista de Recaudo" },
+  { nombre: "MIGUEL ANGEL ROJAS LEON", cargo: "Especialista Comercio Exterior" },
+  { nombre: "GINNA MARCELA MOGOLLON PULIDO", cargo: "Analista de Facturación y Recaudo" },
+  { nombre: "JENNIFER VALENCIA CASTAÑO", cargo: "Analista Controlling" },
+  { nombre: "IVAN STIVEN BONILLA RAMIREZ", cargo: "Controller" }
+];
+
+const USUARIOS_OPERACIONES = [
+  { nombre: "OJGM", cargo: "Director de Operaciones" },
+  { nombre: "TEOT", cargo: "Service Delivery Manager" },
+  { nombre: "CJCV", cargo: "Gerente de Proyectos y Servicios" },
+  { nombre: "JEBC", cargo: "Gerente de Ingeniería" },
+  { nombre: "SEBS", cargo: "Coordinadora Operativa" }
 ];
 
 const MOCK_TEAM_ABSENCES = [
@@ -69,8 +95,9 @@ function App() {
   
   // ESTADOS DE ARQUITECTURA (NUEVOS)
   const [intranet, setIntranet] = useState('Operaciones'); // 'Operaciones' o 'Financiera'
-  const [perfil, setPerfil] = useState('Funcionario'); 
+  const [perfil, setPerfil] = useState('Líder'); 
   const [usuarioNombre, setUsuarioNombre] = useState('Usuario Demo');
+  const [usuarioCargo, setUsuarioCargo] = useState('Cargo Demo');
   
   // ESTADOS DE NAVEGACION
   const [currentModule, setCurrentModule] = useState('ausencias'); // 'ausencias' | 'administrativa' | 'compras' | 'facturacion' | 'logistica' | 'financiera'
@@ -81,19 +108,22 @@ function App() {
   useEffect(() => {
     // Resetear modulo al cambiar intranet
     if (intranet === 'Operaciones') {
+      const defaultUser = USUARIOS_OPERACIONES[0];
+      setUsuarioCargo(defaultUser.cargo);
+      setPerfil(ROLES_POR_CARGO_OPERACIONES[defaultUser.cargo] || 'Funcionario');
+      setUsuarioNombre(defaultUser.nombre);
       setCurrentModule('ausencias');
       setActiveTab('dashboard');
-      setPerfil('Funcionario');
-      setUsuarioNombre('Usuario Demo');
     } else if (intranet === 'Financiera') {
       const defaultUser = USUARIOS_FINANCIERA[0];
-      setPerfil(defaultUser.perfil);
+      setUsuarioCargo(defaultUser.cargo);
+      setPerfil(ROLES_POR_CARGO_FINANCIERA[defaultUser.cargo] || 'Gestor Financiero');
       setUsuarioNombre(defaultUser.nombre);
       setCurrentModule('compras'); 
     }
   }, [intranet]);
 
-  const isFuncionario = perfil === 'Funcionario' || perfil.startsWith('Gestor') || perfil === 'Director Financiero';
+  const isFuncionario = perfil === 'Funcionario' || perfil === 'Líder' || perfil.startsWith('Gestor') || perfil === 'Director Financiero';
   const isLider = perfil === 'Líder' || perfil === 'Director Financiero';
 
   // Sincronizar las pestañas por defecto
@@ -227,7 +257,8 @@ function App() {
                     const selected = USUARIOS_FINANCIERA.find(u => u.nombre === e.target.value);
                     if (selected) {
                       setUsuarioNombre(selected.nombre);
-                      setPerfil(selected.perfil);
+                      setUsuarioCargo(selected.cargo);
+                      setPerfil(ROLES_POR_CARGO_FINANCIERA[selected.cargo] || 'Gestor Financiero');
                     }
                   }}
                   className="w-full bg-slate-800 border border-slate-700 text-white py-2 px-3 rounded-md outline-none text-xs font-medium cursor-pointer"
@@ -237,17 +268,20 @@ function App() {
               </div>
             ) : (
               <div>
-                <label className="text-[10px] font-bold text-blue-400 uppercase tracking-wider mb-1 block">Simular Rol</label>
+                <label className="text-[10px] font-bold text-blue-400 uppercase tracking-wider mb-1 block">Simular Usuario</label>
                 <select 
-                  value={perfil} 
+                  value={usuarioNombre} 
                   onChange={(e) => {
-                    setPerfil(e.target.value);
-                    setUsuarioNombre('Usuario Demo');
+                    const selected = USUARIOS_OPERACIONES.find(u => u.nombre === e.target.value);
+                    if (selected) {
+                      setUsuarioNombre(selected.nombre);
+                      setUsuarioCargo(selected.cargo);
+                      setPerfil(ROLES_POR_CARGO_OPERACIONES[selected.cargo] || 'Funcionario');
+                    }
                   }}
                   className="w-full bg-slate-800 border border-slate-700 text-white py-2 px-3 rounded-md outline-none text-xs font-medium cursor-pointer"
                 >
-                  <option value="Funcionario">Funcionario</option>
-                  <option value="Líder">Líder</option>
+                  {USUARIOS_OPERACIONES.map(u => <option key={u.nombre} value={u.nombre}>{u.nombre}</option>)}
                 </select>
               </div>
             )}
@@ -281,7 +315,7 @@ function App() {
             <div className="flex items-center gap-4">
               <div className="text-right hidden md:block">
                 <p className="text-sm font-bold text-slate-700">{usuarioNombre}</p>
-                <p className="text-xs text-slate-500">{perfil}</p>
+                <p className="text-xs text-slate-500">{usuarioCargo}</p>
               </div>
               <div className="w-10 h-10 rounded-full bg-blue-100 border-2 border-blue-200 flex items-center justify-center text-blue-700 font-bold text-sm">
                 {usuarioNombre.split(' ').map(n => n[0]).slice(0, 2).join('')}
