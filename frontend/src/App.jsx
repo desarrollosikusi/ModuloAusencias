@@ -24,10 +24,13 @@ const ROLES_POR_CARGO_FINANCIERA = {
 
 const ROLES_POR_CARGO_OPERACIONES = {
   "Director de Operaciones": "Líder",
-  "Service Delivery Manager": "Líder",
+  "Service Delivery Manager": "Funcionario",
   "Gerente de Proyectos y Servicios": "Líder",
   "Gerente de Ingeniería": "Líder",
-  "Coordinadora Operativa": "Funcionario"
+  "Coordinadora Operativa": "Funcionario",
+  "Project Manager": "Funcionario",
+  "Líder SMO": "Funcionario",
+  "Coordinador SDM": "Funcionario"
 };
 
 const USUARIOS_FINANCIERA = [
@@ -45,7 +48,17 @@ const USUARIOS_OPERACIONES = [
   { nombre: "TEOT", cargo: "Service Delivery Manager" },
   { nombre: "CJCV", cargo: "Gerente de Proyectos y Servicios" },
   { nombre: "JEBC", cargo: "Gerente de Ingeniería" },
-  { nombre: "SEBS", cargo: "Coordinadora Operativa" }
+  { nombre: "SEBS", cargo: "Coordinadora Operativa" },
+  { nombre: "OFDQ", cargo: "Project Manager" },
+  { nombre: "SLSC", cargo: "Project Manager" },
+  { nombre: "DKCC", cargo: "Project Manager" },
+  { nombre: "HDSH", cargo: "Project Manager" },
+  { nombre: "JASP", cargo: "Project Manager" },
+  { nombre: "MSSL", cargo: "Project Manager" },
+  { nombre: "AMRV", cargo: "Service Delivery Manager" },
+  { nombre: "IDGG", cargo: "Service Delivery Manager" },
+  { nombre: "DALB", cargo: "Líder SMO" },
+  { nombre: "LELD", cargo: "Coordinador SDM" }
 ];
 
 const MOCK_TEAM_ABSENCES = [
@@ -77,6 +90,14 @@ function App() {
   const [ausencias, setAusencias] = useState([]);
   const [solicitudesAdmin, setSolicitudesAdmin] = useState([]);
   const [selectedSolicitud, setSelectedSolicitud] = useState(null);
+  const [peps, setPeps] = useState([]);
+  
+  const cargarPeps = () => {
+    fetch('http://localhost:8000/api/peps')
+      .then(res => res.json())
+      .then(data => setPeps(data))
+      .catch(err => console.error("Error fetching PEPs:", err));
+  };
   
   const cargarAdministrativas = () => {
     fetch('http://localhost:8000/api/administrativa')
@@ -87,7 +108,26 @@ function App() {
 
   useEffect(() => {
     cargarAdministrativas();
+    cargarPeps();
   }, []);
+
+  const asignarPM = async (pepId, nuevoPM) => {
+    try {
+      const res = await fetch(`http://localhost:8000/api/peps/${pepId}/assign-pm`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pm: nuevoPM })
+      });
+      if (res.ok) {
+        cargarPeps();
+      } else {
+        alert("Error al asignar PM");
+      }
+    } catch (e) {
+      console.error(e);
+      alert("Error de conexión");
+    }
+  };
 
   const getSemaforoColor = (dias) => {
     if (dias <= 2) return 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]';
@@ -745,7 +785,79 @@ function App() {
             </div>
           )}
 
-          {currentModule === 'administrativa' && activeTab !== 'nueva-solicitud' && activeTab !== 'mis-solicitudes' && (
+          {currentModule === 'administrativa' && (activeTab === 'compras-pendientes' || activeTab === 'facturacion-pendiente') && (
+            <div className="max-w-6xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm mb-6">
+                <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+                  <Briefcase size={24} className="text-blue-600"/> 
+                  {activeTab === 'compras-pendientes' ? 'Compras Pendientes (Asignación de PM)' : 'Facturación Pendiente (Asignación de PM)'}
+                </h2>
+                <p className="text-sm text-slate-500 mt-1">
+                  Proyectos creados con observación anticipada que requieren asignación de Project Manager.
+                </p>
+              </div>
+
+              <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden overflow-x-auto">
+                <table className="w-full text-left">
+                  <thead className="bg-slate-50 border-b border-slate-200">
+                    <tr>
+                      <th className="px-3 py-2 font-semibold text-slate-600 text-xs whitespace-nowrap">Folio</th>
+                      <th className="px-3 py-2 font-semibold text-slate-600 text-xs whitespace-nowrap">PEP</th>
+                      <th className="px-3 py-2 font-semibold text-slate-600 text-xs whitespace-nowrap max-w-xs truncate">Cliente</th>
+                      <th className="px-3 py-2 font-semibold text-slate-600 text-xs whitespace-nowrap">AM</th>
+                      <th className="px-3 py-2 font-semibold text-slate-600 text-xs whitespace-nowrap">Fecha de creación</th>
+                      <th className="px-3 py-2 font-semibold text-slate-600 text-xs whitespace-nowrap">PM</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {peps
+                      .filter(p => p.observaciones === (activeTab === 'compras-pendientes' ? 'Compra anticipada' : 'Facturación anticipada') && p.pm === 'Pendiente por asignar PM')
+                      .map((p, i) => (
+                      <tr key={i} className="hover:bg-slate-50 transition">
+                        <td className="px-3 py-2 text-xs font-medium text-slate-800 whitespace-nowrap">{p.folio}</td>
+                        <td className="px-3 py-2 text-xs font-semibold text-blue-600 whitespace-nowrap">{p.codigo_pep}</td>
+                        <td className="px-3 py-2 text-xs text-slate-600 whitespace-nowrap truncate max-w-xs" title={p.cliente}>{p.cliente}</td>
+                        <td className="px-3 py-2 text-xs text-slate-600 whitespace-nowrap">{p.am}</td>
+                        <td className="px-3 py-2 text-xs text-slate-500 whitespace-nowrap">
+                          {new Date(p.fecha_creacion).toLocaleDateString()}
+                        </td>
+                        <td className="px-3 py-2 whitespace-nowrap">
+                          <select 
+                            className="border border-slate-300 rounded-lg px-2 py-1 text-xs focus:ring-2 focus:ring-blue-500 outline-none w-full bg-white"
+                            onChange={(e) => {
+                              if(e.target.value) asignarPM(p.id, e.target.value);
+                            }}
+                            defaultValue=""
+                          >
+                            <option value="" disabled>Asignar PM...</option>
+                            <option value="OFDQ">OFDQ - Project Manager</option>
+                            <option value="SLSC">SLSC - Project Manager</option>
+                            <option value="DKCC">DKCC - Project Manager</option>
+                            <option value="HDSH">HDSH - Project Manager</option>
+                            <option value="JASP">JASP - Project Manager</option>
+                            <option value="MSSL">MSSL - Project Manager</option>
+                            <option value="AMRV">AMRV - Service Delivery Manager</option>
+                            <option value="DALB">DALB - Líder SMO</option>
+                            <option value="IDGG">IDGG - Service Delivery Manager</option>
+                            <option value="LELD">LELD - Coordinador SDM</option>
+                          </select>
+                        </td>
+                      </tr>
+                    ))}
+                    {peps.filter(p => p.observaciones === (activeTab === 'compras-pendientes' ? 'Compra anticipada' : 'Facturación anticipada') && p.pm === 'Pendiente por asignar PM').length === 0 && (
+                      <tr>
+                        <td colSpan="6" className="px-6 py-8 text-center text-slate-400">
+                          No hay proyectos pendientes de asignación en esta bandeja.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {currentModule === 'administrativa' && activeTab !== 'nueva-solicitud' && activeTab !== 'mis-solicitudes' && activeTab !== 'compras-pendientes' && activeTab !== 'facturacion-pendiente' && (
              <div className="flex flex-col items-center justify-center py-20 text-slate-400">
                <Building size={64} className="mb-4 opacity-50"/>
                <h2 className="text-2xl font-bold text-slate-500">Bandeja: {activeTab.replace(/-/g, ' ').toUpperCase()}</h2>

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { FileText, CheckCircle, UploadCloud, Briefcase } from 'lucide-react';
 
-const TIPOS_SOLICITUD = ["Compra", "Cotización", "Entrega de bienes", "Facturación"];
+const TIPOS_SOLICITUD = ["Ajuste compra CISCO", "Compra", "Contrato préstamo de equipos", "Cotización", "Entrega de bienes", "Facturación"];
 const TIPOS_COMPRA = ["CECO", "Proyecto", "Servicio"];
 const CECOS = ["CECO-1001 (Operaciones)", "CECO-1002 (Soporte)", "CECO-1003 (IT Interno)", "CECO-1004 (Ventas)"];
 const PROVEEDORES = ["AWS", "CISCO", "Dell", "Lenovo", "Microsoft", "Otro"];
@@ -44,13 +44,13 @@ export default function FormularioAdministrativa({ onCancel, onSubmit }) {
   const showCiscoFields = formData.proveedor === "CISCO";
 
   return (
-    <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-      <div className="bg-slate-50 px-8 py-6 border-b border-slate-200">
-        <h2 className="text-2xl font-bold text-slate-800">Nueva Solicitud Administrativa</h2>
-        <p className="text-slate-500 mt-1">Completa los datos para registrar el requerimiento hacia la Dirección Financiera.</p>
+    <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden max-w-4xl mx-auto">
+      <div className="bg-slate-50 px-6 py-4 border-b border-slate-200">
+        <h2 className="text-xl font-bold text-slate-800">Nueva Solicitud Administrativa</h2>
+        <p className="text-sm text-slate-500 mt-1">Completa los datos para registrar el requerimiento hacia la Dirección Financiera.</p>
       </div>
 
-      <form onSubmit={handleSubmit} className="p-8 space-y-10">
+      <form onSubmit={handleSubmit} className="p-6 space-y-6">
         
         <section>
           <h3 className="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
@@ -64,7 +64,7 @@ export default function FormularioAdministrativa({ onCancel, onSubmit }) {
                 value={formData.tipoSolicitud} 
                 onChange={handleChange}
                 required
-                className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition"
+                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition"
               >
                 <option value="">Selecciona una opción...</option>
                 {TIPOS_SOLICITUD.map(t => <option key={t} value={t}>{t}</option>)}
@@ -87,7 +87,7 @@ export default function FormularioAdministrativa({ onCancel, onSubmit }) {
                   value={formData.tipoCompra} 
                   onChange={handleChange}
                   required={isCompra}
-                  className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                  className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                 >
                   <option value="">Selecciona...</option>
                   {TIPOS_COMPRA.map(t => <option key={t} value={t}>{t}</option>)}
@@ -105,7 +105,7 @@ export default function FormularioAdministrativa({ onCancel, onSubmit }) {
                     maxLength={20}
                     required={showPep}
                     placeholder="Ej. PEP-2024-001"
-                    className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                    className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                   />
                   <p className="text-xs text-slate-400 mt-1">Máximo 20 caracteres ({formData.pep.length}/20)</p>
                 </div>
@@ -119,7 +119,7 @@ export default function FormularioAdministrativa({ onCancel, onSubmit }) {
                     value={formData.ceco} 
                     onChange={handleChange}
                     required={showCeco}
-                    className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                    className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                   >
                     <option value="">Buscar CECO...</option>
                     {CECOS.map(c => <option key={c} value={c}>{c}</option>)}
@@ -136,7 +136,7 @@ export default function FormularioAdministrativa({ onCancel, onSubmit }) {
                   value={formData.proveedor} 
                   onChange={handleChange}
                   required={isCompra}
-                  className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                  className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                 >
                   <option value="">Buscar Proveedor...</option>
                   {PROVEEDORES.map(p => <option key={p} value={p}>{p}</option>)}
@@ -163,12 +163,12 @@ export default function FormularioAdministrativa({ onCancel, onSubmit }) {
               <div className="md:col-span-1">
                 <label className="block text-sm font-medium text-slate-700 mb-2">Monto *</label>
                 <input type="number" name="monto" value={formData.monto} onChange={handleChange} required={isCompra} min="0" step="0.01"
-                  className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"/>
+                  className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"/>
               </div>
               <div className="md:col-span-1">
                 <label className="block text-sm font-medium text-slate-700 mb-2">Moneda *</label>
                 <select name="moneda" value={formData.moneda} onChange={handleChange} required={isCompra}
-                  className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                  className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
                   <option value="">Seleccionar...</option>
                   <option value="COP">COP</option>
                   <option value="USD">USD</option>
@@ -177,7 +177,7 @@ export default function FormularioAdministrativa({ onCancel, onSubmit }) {
               <div className="md:col-span-1">
                 <label className="block text-sm font-medium text-slate-700 mb-2">Compra Planeada *</label>
                 <select name="compraPlaneada" value={formData.compraPlaneada} onChange={handleChange} required={isCompra}
-                  className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                  className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
                   <option value="">Seleccionar...</option>
                   <option value="Si">Sí</option>
                   <option value="No">No</option>
@@ -202,12 +202,12 @@ export default function FormularioAdministrativa({ onCancel, onSubmit }) {
           </section>
         )}
 
-        <div className="pt-8 border-t border-slate-200 flex justify-end gap-4">
-          <button type="button" onClick={onCancel} className="px-6 py-2.5 rounded-lg border border-slate-300 text-slate-700 font-medium hover:bg-slate-50 transition">
+        <div className="pt-6 border-t border-slate-200 flex justify-end gap-3">
+          <button type="button" onClick={onCancel} className="px-4 py-2 rounded-lg border border-slate-300 text-slate-700 text-sm font-medium hover:bg-slate-50 transition">
             Cancelar
           </button>
-          <button type="submit" className="px-6 py-2.5 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 transition flex items-center gap-2">
-            <CheckCircle size={18}/>
+          <button type="submit" className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition flex items-center gap-2">
+            <CheckCircle size={16}/>
             Enviar Solicitud
           </button>
         </div>

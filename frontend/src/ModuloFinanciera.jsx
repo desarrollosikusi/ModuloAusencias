@@ -8,11 +8,19 @@ export default function ModuloFinanciera({ perfilActual, usuarioActual }) {
   const [showModal, setShowModal] = useState(false);
 
   // Filtros
-  const [filtroPrincipal, setFiltroPrincipal] = useState(''); // Folio, Código PEP, Cliente, PM, AM
-  const [filtroValor, setFiltroValor] = useState(''); // Dynamic value
-  const [vigenciaFilter, setVigenciaFilter] = useState('Todos los años');
-  
   const currentYear = new Date().getFullYear();
+  const [vigenciaFilter, setVigenciaFilter] = useState(currentYear.toString());
+  const [columnFilters, setColumnFilters] = useState({
+    folio: '',
+    codigo_sap: '',
+    codigo_pep: '',
+    cliente: '',
+    nombre_proyecto: '',
+    pm: '',
+    am: '',
+    observaciones: ''
+  });
+  
   const vigenciasOptions = ['Todos los años', ...Array.from({length: currentYear - 2020 + 1}, (_, i) => 2020 + i).reverse()];
 
   useEffect(() => {
@@ -22,31 +30,9 @@ export default function ModuloFinanciera({ perfilActual, usuarioActual }) {
       .catch(err => console.error("Error fetching PEPs:", err));
   }, []);
 
-  // Opciones dinámicas para el segundo filtro
-  const opcionesSecundarias = useMemo(() => {
-    if (!filtroPrincipal) return [];
-    
-    // Mapeo del label a la propiedad en el objeto
-    const propMap = {
-      'Folio': 'folio',
-      'Código PEP': 'codigo_pep',
-      'Cliente': 'cliente',
-      'PM': 'pm',
-      'AM': 'am'
-    };
-    
-    const prop = propMap[filtroPrincipal];
-    if (!prop) return [];
-
-    // Extraer valores únicos
-    const values = peps.map(p => p[prop]).filter(Boolean);
-    return [...new Set(values)].sort();
-  }, [peps, filtroPrincipal]);
-
-  // Al cambiar el filtro principal, resetear el valor seleccionado
-  useEffect(() => {
-    setFiltroValor('');
-  }, [filtroPrincipal]);
+  const handleColumnFilterChange = (column, value) => {
+    setColumnFilters(prev => ({ ...prev, [column]: value }));
+  };
 
   const pepsFiltrados = useMemo(() => {
     return peps.filter(p => {
@@ -55,22 +41,19 @@ export default function ModuloFinanciera({ perfilActual, usuarioActual }) {
         return false;
       }
       
-      // Filtro Dinámico
-      if (filtroPrincipal && filtroValor) {
-        const propMap = {
-          'Folio': 'folio',
-          'Código PEP': 'codigo_pep',
-          'Cliente': 'cliente',
-          'PM': 'pm',
-          'AM': 'am'
-        };
-        const prop = propMap[filtroPrincipal];
-        if (p[prop] !== filtroValor) return false;
+      // Filtros por Columna
+      for (const [key, value] of Object.entries(columnFilters)) {
+        if (value) {
+          const valStr = p[key] ? p[key].toString().toLowerCase() : '';
+          if (!valStr.includes(value.toLowerCase())) {
+            return false;
+          }
+        }
       }
       
       return true;
     });
-  }, [peps, vigenciaFilter, filtroPrincipal, filtroValor]);
+  }, [peps, vigenciaFilter, columnFilters]);
 
   return (
     <div className="max-w-7xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -99,44 +82,6 @@ export default function ModuloFinanciera({ perfilActual, usuarioActual }) {
             </div>
             
             <div className="flex flex-wrap items-end gap-3">
-              {/* Filtro Principal */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-500 mb-1">Filtro</label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
-                    <Filter size={14} className="text-slate-400" />
-                  </div>
-                  <select 
-                    value={filtroPrincipal} 
-                    onChange={(e) => setFiltroPrincipal(e.target.value)}
-                    className="pl-8 pr-8 py-2 border border-slate-300 rounded-lg text-sm bg-slate-50 focus:ring-2 focus:ring-blue-500 outline-none"
-                  >
-                    <option value="">Seleccione filtro...</option>
-                    <option value="Folio">Folio</option>
-                    <option value="Código PEP">Código PEP</option>
-                    <option value="Cliente">Cliente</option>
-                    <option value="PM">PM</option>
-                    <option value="AM">AM</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* Filtro Secundario Dinámico */}
-              {filtroPrincipal && (
-                <div className="animate-in fade-in zoom-in duration-200">
-                  <label className="block text-xs font-semibold text-slate-500 mb-1">{filtroPrincipal}</label>
-                  <select 
-                    value={filtroValor} 
-                    onChange={(e) => setFiltroValor(e.target.value)}
-                    className="px-3 py-2 border border-slate-300 rounded-lg text-sm bg-slate-50 focus:ring-2 focus:ring-blue-500 outline-none min-w-[150px]"
-                  >
-                    <option value="">Todos</option>
-                    {opcionesSecundarias.map(opt => (
-                      <option key={opt} value={opt}>{opt}</option>
-                    ))}
-                  </select>
-                </div>
-              )}
 
               {/* Filtro Vigencia */}
               <div>
@@ -165,29 +110,53 @@ export default function ModuloFinanciera({ perfilActual, usuarioActual }) {
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider border-b border-slate-200">
-                    <th className="px-3 py-2 font-bold w-[3.5cm] min-w-[3.5cm] max-w-[3.5cm]">Folio</th>
-                    <th className="px-3 py-2 font-bold w-[3.5cm] min-w-[3.5cm] max-w-[3.5cm]">Código SAP</th>
-                    <th className="px-3 py-2 font-bold w-[3.5cm] min-w-[3.5cm] max-w-[3.5cm]">Código PEP</th>
-                    <th className="px-3 py-2 font-bold">Cliente</th>
-                    <th className="px-3 py-2 font-bold">Nombre del Proyecto</th>
-                    <th className="px-3 py-2 font-bold">PM</th>
-                    <th className="px-3 py-2 font-bold">AM</th>
-                    <th className="px-3 py-2 font-bold max-w-[200px]">Observaciones</th>
+                  <tr className="bg-slate-50 border-b border-slate-200">
+                    <th className="p-3 align-top whitespace-nowrap">
+                      <div className="text-xs uppercase font-bold text-slate-500 tracking-wider mb-2">Folio</div>
+                      <input type="text" placeholder="Filtrar..." className="w-full text-xs px-2 py-1 border border-slate-300 rounded outline-none focus:ring-1 focus:ring-blue-500 font-normal bg-white" value={columnFilters.folio} onChange={(e) => handleColumnFilterChange('folio', e.target.value)} />
+                    </th>
+                    <th className="p-3 align-top whitespace-nowrap">
+                      <div className="text-xs uppercase font-bold text-slate-500 tracking-wider mb-2">Código SAP</div>
+                      <input type="text" placeholder="Filtrar..." className="w-full text-xs px-2 py-1 border border-slate-300 rounded outline-none focus:ring-1 focus:ring-blue-500 font-normal bg-white" value={columnFilters.codigo_sap} onChange={(e) => handleColumnFilterChange('codigo_sap', e.target.value)} />
+                    </th>
+                    <th className="p-3 align-top whitespace-nowrap">
+                      <div className="text-xs uppercase font-bold text-slate-500 tracking-wider mb-2">Código PEP</div>
+                      <input type="text" placeholder="Filtrar..." className="w-full text-xs px-2 py-1 border border-slate-300 rounded outline-none focus:ring-1 focus:ring-blue-500 font-normal bg-white" value={columnFilters.codigo_pep} onChange={(e) => handleColumnFilterChange('codigo_pep', e.target.value)} />
+                    </th>
+                    <th className="p-3 align-top whitespace-nowrap">
+                      <div className="text-xs uppercase font-bold text-slate-500 tracking-wider mb-2">Cliente</div>
+                      <input type="text" placeholder="Filtrar..." className="w-full text-xs px-2 py-1 border border-slate-300 rounded outline-none focus:ring-1 focus:ring-blue-500 font-normal bg-white" value={columnFilters.cliente} onChange={(e) => handleColumnFilterChange('cliente', e.target.value)} />
+                    </th>
+                    <th className="p-3 align-top whitespace-nowrap">
+                      <div className="text-xs uppercase font-bold text-slate-500 tracking-wider mb-2">Nombre del Proyecto</div>
+                      <input type="text" placeholder="Filtrar..." className="w-full text-xs px-2 py-1 border border-slate-300 rounded outline-none focus:ring-1 focus:ring-blue-500 font-normal bg-white min-w-[200px]" value={columnFilters.nombre_proyecto} onChange={(e) => handleColumnFilterChange('nombre_proyecto', e.target.value)} />
+                    </th>
+                    <th className="p-3 align-top whitespace-nowrap">
+                      <div className="text-xs uppercase font-bold text-slate-500 tracking-wider mb-2">PM</div>
+                      <input type="text" placeholder="Filtrar..." className="w-full text-xs px-2 py-1 border border-slate-300 rounded outline-none focus:ring-1 focus:ring-blue-500 font-normal bg-white" value={columnFilters.pm} onChange={(e) => handleColumnFilterChange('pm', e.target.value)} />
+                    </th>
+                    <th className="p-3 align-top whitespace-nowrap">
+                      <div className="text-xs uppercase font-bold text-slate-500 tracking-wider mb-2">AM</div>
+                      <input type="text" placeholder="Filtrar..." className="w-full text-xs px-2 py-1 border border-slate-300 rounded outline-none focus:ring-1 focus:ring-blue-500 font-normal bg-white" value={columnFilters.am} onChange={(e) => handleColumnFilterChange('am', e.target.value)} />
+                    </th>
+                    <th className="p-3 align-top whitespace-nowrap">
+                      <div className="text-xs uppercase font-bold text-slate-500 tracking-wider mb-2">Observaciones</div>
+                      <input type="text" placeholder="Filtrar..." className="w-full text-xs px-2 py-1 border border-slate-300 rounded outline-none focus:ring-1 focus:ring-blue-500 font-normal bg-white" value={columnFilters.observaciones} onChange={(e) => handleColumnFilterChange('observaciones', e.target.value)} />
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {pepsFiltrados.length > 0 ? (
                     pepsFiltrados.map((pep) => (
                       <tr key={pep.id} className="hover:bg-slate-50 transition-colors">
-                        <td className="px-3 py-2 text-xs font-semibold text-slate-700 whitespace-nowrap w-[3.5cm] min-w-[3.5cm] max-w-[3.5cm] overflow-hidden text-ellipsis">{pep.folio}</td>
-                        <td className="px-3 py-2 text-xs text-slate-600 whitespace-nowrap w-[3.5cm] min-w-[3.5cm] max-w-[3.5cm] overflow-hidden text-ellipsis">{pep.codigo_sap}</td>
-                        <td className="px-3 py-2 text-xs font-medium text-blue-700 whitespace-nowrap bg-blue-50/30 w-[3.5cm] min-w-[3.5cm] max-w-[3.5cm] overflow-hidden text-ellipsis">{pep.codigo_pep}</td>
-                        <td className="px-3 py-2 text-xs font-medium text-slate-700">{pep.cliente}</td>
-                        <td className="px-3 py-2 text-xs text-slate-800 leading-tight">{pep.nombre_proyecto}</td>
-                        <td className="px-3 py-2 text-xs text-slate-600 leading-tight">{pep.pm}</td>
-                        <td className="px-3 py-2 text-xs text-slate-600 leading-tight">{pep.am}</td>
-                        <td className="px-3 py-2 text-[10px] text-slate-500 italic max-w-[250px] break-words">{pep.observaciones || '-'}</td>
+                        <td className="px-3 py-3 text-xs font-semibold text-slate-700 whitespace-nowrap">{pep.folio}</td>
+                        <td className="px-3 py-3 text-xs text-slate-600 whitespace-nowrap">{pep.codigo_sap}</td>
+                        <td className="px-3 py-3 text-xs font-medium text-blue-700 whitespace-nowrap bg-blue-50/30">{pep.codigo_pep}</td>
+                        <td className="px-3 py-3 text-xs font-medium text-slate-700 whitespace-nowrap">{pep.cliente}</td>
+                        <td className="px-3 py-3 text-xs text-slate-800 whitespace-nowrap">{pep.nombre_proyecto}</td>
+                        <td className="px-3 py-3 text-xs text-slate-600 whitespace-nowrap">{pep.pm}</td>
+                        <td className="px-3 py-3 text-xs text-slate-600 whitespace-nowrap">{pep.am}</td>
+                        <td className="px-3 py-3 text-xs text-slate-500 italic whitespace-nowrap">{pep.observaciones || '-'}</td>
                       </tr>
                     ))
                   ) : (

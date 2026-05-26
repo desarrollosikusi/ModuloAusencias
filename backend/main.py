@@ -106,6 +106,9 @@ class PepIkusiResponse(PepIkusiCreate):
     class Config:
         from_attributes = True
 
+class AssignPMRequest(BaseModel):
+    pm: str
+
 # Directorio de subida de archivos (Volumen persistente de Docker)
 UPLOAD_DIR = "/app/uploads"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
@@ -289,19 +292,6 @@ def crear_pep(pep: PepIkusiCreate, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(db_pep)
     
-    # Crear Solicitud Administrativa automática si aplica
-    if pep.observaciones in ["Compra anticipada", "Facturación anticipada"] and pep.pm == "Pendiente por asignar PM":
-        tipo = "Compra" if pep.observaciones == "Compra anticipada" else "Facturación"
-        
-        db_solicitud = SolicitudAdministrativaDB(
-            tipo_solicitud=tipo,
-            pep=pep.codigo_pep,
-            observaciones=f"Generado automáticamente desde creación de PEP ({pep.observaciones})",
-            estado="Abierto"
-        )
-        db.add(db_solicitud)
-        db.commit()
-    
     return {
         **db_pep.__dict__,
         "fecha_creacion": str(db_pep.fecha_creacion)
@@ -316,3 +306,18 @@ def get_peps(db: Session = Depends(get_db)):
         data["fecha_creacion"] = str(pep.fecha_creacion)
         resultado.append(data)
     return resultado
+
+@app.put("/api/peps/{pep_id}/assign-pm", response_model=PepIkusiResponse)
+def assign_pm(pep_id: int, assign_req: AssignPMRequest, db: Session = Depends(get_db)):
+    db_pep = db.query(PepIkusiDB).filter(PepIkusiDB.id == pep_id).first()
+    if not db_pep:
+        raise HTTPException(status_code=404, detail="PEP no encontrado")
+        
+    db_pep.pm = assign_req.pm
+    db.commit()
+    db.refresh(db_pep)
+    
+    return {
+        **db_pep.__dict__,
+        "fecha_creacion": str(db_pep.fecha_creacion)
+    }
