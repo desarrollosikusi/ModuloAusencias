@@ -65,6 +65,8 @@ class SolicitudAdminResponse(BaseModel):
     diasHabiles: int
     rutaCotizacion: Optional[str] = None
     fechaCierre: Optional[str] = None
+    solicitante: Optional[str] = None
+    detallesPrestamo: Optional[str] = None
     
     # Nuevos campos de gestión
     fechaOrdenCompra: Optional[str] = None
@@ -130,6 +132,8 @@ def crear_solicitud_admin(
     observaciones: Optional[str] = Form(None),
     webOrder: Optional[str] = Form(None),
     dealId: Optional[str] = Form(None),
+    solicitante: Optional[str] = Form(None),
+    detallesPrestamo: Optional[str] = Form(None),
     cotizacion: Optional[UploadFile] = File(None),
     db: Session = Depends(get_db)
 ):
@@ -154,7 +158,9 @@ def crear_solicitud_admin(
         observaciones=observaciones,
         web_order=webOrder,
         deal_id=dealId,
-        ruta_cotizacion=ruta_archivo
+        solicitante=solicitante,
+        ruta_cotizacion=ruta_archivo,
+        detalles_prestamo=detallesPrestamo
     )
     db.add(db_solicitud)
     db.commit()
@@ -175,6 +181,7 @@ def crear_solicitud_admin(
         "dealId": db_solicitud.deal_id,
         "estado": db_solicitud.estado,
         "gestor": db_solicitud.gestor,
+        "solicitante": db_solicitud.solicitante,
         "diasHabiles": calcular_dias_habiles(db_solicitud.fecha_creacion, db_solicitud.fecha_cierre),
         "rutaCotizacion": db_solicitud.ruta_cotizacion,
         "fechaCierre": str(db_solicitud.fecha_cierre) if db_solicitud.fecha_cierre else None,
@@ -184,7 +191,8 @@ def crear_solicitud_admin(
         "monedaFinal": db_solicitud.moneda_final,
         "ciscoQuote": db_solicitud.cisco_quote,
         "ciscoSo": db_solicitud.cisco_so,
-        "ciscoWebOrderFinal": db_solicitud.cisco_web_order_final
+        "ciscoWebOrderFinal": db_solicitud.cisco_web_order_final,
+        "detallesPrestamo": db_solicitud.detalles_prestamo
     }
 
 @app.put("/api/administrativa/{solicitud_id}/gestionar", response_model=SolicitudAdminResponse)
@@ -224,6 +232,7 @@ def gestionar_solicitud(solicitud_id: int, datos: SolicitudAdminGestionar, db: S
         "dealId": solicitud.deal_id,
         "estado": solicitud.estado,
         "gestor": solicitud.gestor,
+        "solicitante": solicitud.solicitante,
         "diasHabiles": calcular_dias_habiles(solicitud.fecha_creacion, solicitud.fecha_cierre),
         "rutaCotizacion": solicitud.ruta_cotizacion,
         "fechaCierre": str(solicitud.fecha_cierre) if solicitud.fecha_cierre else None,
@@ -233,7 +242,140 @@ def gestionar_solicitud(solicitud_id: int, datos: SolicitudAdminGestionar, db: S
         "monedaFinal": solicitud.moneda_final,
         "ciscoQuote": solicitud.cisco_quote,
         "ciscoSo": solicitud.cisco_so,
-        "ciscoWebOrderFinal": solicitud.cisco_web_order_final
+        "ciscoWebOrderFinal": solicitud.cisco_web_order_final,
+        "detallesPrestamo": solicitud.detalles_prestamo
+    }
+
+import json
+
+@app.post("/api/logistica/{solicitud_id}/gestionar")
+def gestionar_logistica(
+    solicitud_id: int,
+    gestor: str = Form(...),
+    fechaLimite: str = Form(...),
+    observaciones: Optional[str] = Form(None),
+    contratoInicial: UploadFile = File(...),
+    db: Session = Depends(get_db)
+):
+    solicitud = db.query(SolicitudAdministrativaDB).filter(SolicitudAdministrativaDB.id == solicitud_id).first()
+    if not solicitud:
+        return {"error": "No encontrada"}
+
+    filename = f"{datetime.utcnow().timestamp()}_{contratoInicial.filename}"
+    filepath = os.path.join(UPLOAD_DIR, filename)
+    with open(filepath, "wb") as buffer:
+        shutil.copyfileobj(contratoInicial.file, buffer)
+
+    detalles = json.loads(solicitud.detalles_prestamo) if solicitud.detalles_prestamo else {}
+    detalles["gestionLogistica"] = {
+        "gestor": gestor,
+        "fechaLimite": fechaLimite,
+        "observaciones": observaciones,
+        "rutaContratoInicial": filepath
+    }
+    
+    solicitud.detalles_prestamo = json.dumps(detalles)
+    solicitud.estado = "Pendiente firma contrato"
+    
+    db.commit()
+    db.refresh(solicitud)
+
+    return {
+        "id": solicitud.id,
+        "tipoSolicitud": solicitud.tipo_solicitud,
+        "tipoCompra": solicitud.tipo_compra,
+        "pep": solicitud.pep,
+        "ceco": solicitud.ceco,
+        "proveedor": solicitud.proveedor,
+        "monto": solicitud.monto,
+        "moneda": solicitud.moneda,
+        "compraPlaneada": solicitud.compra_planeada,
+        "observaciones": solicitud.observaciones,
+        "webOrder": solicitud.web_order,
+        "dealId": solicitud.deal_id,
+        "estado": solicitud.estado,
+        "gestor": solicitud.gestor,
+        "solicitante": solicitud.solicitante,
+        "diasHabiles": calcular_dias_habiles(solicitud.fecha_creacion, solicitud.fecha_cierre),
+        "rutaCotizacion": solicitud.ruta_cotizacion,
+        "fechaCierre": str(solicitud.fecha_cierre) if solicitud.fecha_cierre else None,
+        "fechaOrdenCompra": str(solicitud.fecha_orden_compra) if solicitud.fecha_orden_compra else None,
+        "ordenCompra": solicitud.orden_compra,
+        "valorFinal": solicitud.valor_final,
+        "monedaFinal": solicitud.moneda_final,
+        "ciscoQuote": solicitud.cisco_quote,
+        "ciscoSo": solicitud.cisco_so,
+        "ciscoWebOrderFinal": solicitud.cisco_web_order_final,
+        "detallesPrestamo": solicitud.detalles_prestamo
+    }
+
+@app.post("/api/administrativa/{solicitud_id}/contrato-firmado")
+def subir_contrato_firmado(
+    solicitud_id: int,
+    contratoFirmado: UploadFile = File(...),
+    direccion: str = Form(None),
+    fechaHora: str = Form(None),
+    responsableRecepcion: str = Form(None),
+    telefono: str = Form(None),
+    observaciones: str = Form(None),
+    db: Session = Depends(get_db)
+):
+    solicitud = db.query(SolicitudAdministrativaDB).filter(SolicitudAdministrativaDB.id == solicitud_id).first()
+    if not solicitud:
+        return {"error": "No encontrada"}
+
+    filename = f"{datetime.utcnow().timestamp()}_{contratoFirmado.filename}"
+    filepath = os.path.join(UPLOAD_DIR, filename)
+    with open(filepath, "wb") as buffer:
+        shutil.copyfileobj(contratoFirmado.file, buffer)
+
+    detalles = json.loads(solicitud.detalles_prestamo) if solicitud.detalles_prestamo else {}
+    if "gestionLogistica" not in detalles:
+        detalles["gestionLogistica"] = {}
+    detalles["gestionLogistica"]["rutaContratoFirmado"] = filepath
+    
+    if direccion or fechaHora:
+        detalles["entrega"] = {
+            "direccion": direccion or "",
+            "fechaHora": fechaHora or "",
+            "responsableRecepcion": responsableRecepcion or "",
+            "telefono": telefono or "",
+            "observaciones": observaciones or ""
+        }
+    
+    solicitud.detalles_prestamo = json.dumps(detalles)
+    solicitud.estado = "Pendiente envío equipos"
+    
+    db.commit()
+    db.refresh(solicitud)
+
+    return {
+        "id": solicitud.id,
+        "tipoSolicitud": solicitud.tipo_solicitud,
+        "tipoCompra": solicitud.tipo_compra,
+        "pep": solicitud.pep,
+        "ceco": solicitud.ceco,
+        "proveedor": solicitud.proveedor,
+        "monto": solicitud.monto,
+        "moneda": solicitud.moneda,
+        "compraPlaneada": solicitud.compra_planeada,
+        "observaciones": solicitud.observaciones,
+        "webOrder": solicitud.web_order,
+        "dealId": solicitud.deal_id,
+        "estado": solicitud.estado,
+        "gestor": solicitud.gestor,
+        "solicitante": solicitud.solicitante,
+        "diasHabiles": calcular_dias_habiles(solicitud.fecha_creacion, solicitud.fecha_cierre),
+        "rutaCotizacion": solicitud.ruta_cotizacion,
+        "fechaCierre": str(solicitud.fecha_cierre) if solicitud.fecha_cierre else None,
+        "fechaOrdenCompra": str(solicitud.fecha_orden_compra) if solicitud.fecha_orden_compra else None,
+        "ordenCompra": solicitud.orden_compra,
+        "valorFinal": solicitud.valor_final,
+        "monedaFinal": solicitud.moneda_final,
+        "ciscoQuote": solicitud.cisco_quote,
+        "ciscoSo": solicitud.cisco_so,
+        "ciscoWebOrderFinal": solicitud.cisco_web_order_final,
+        "detallesPrestamo": solicitud.detalles_prestamo
     }
 
 @app.get("/api/administrativa", response_model=List[SolicitudAdminResponse])
@@ -256,6 +398,7 @@ def get_solicitudes_admin(db: Session = Depends(get_db)):
             "dealId": sol.deal_id,
             "estado": sol.estado,
             "gestor": sol.gestor,
+            "solicitante": sol.solicitante,
             "diasHabiles": calcular_dias_habiles(sol.fecha_creacion, sol.fecha_cierre),
             "rutaCotizacion": sol.ruta_cotizacion,
             "fechaCierre": str(sol.fecha_cierre) if sol.fecha_cierre else None,
@@ -265,7 +408,8 @@ def get_solicitudes_admin(db: Session = Depends(get_db)):
             "monedaFinal": sol.moneda_final,
             "ciscoQuote": sol.cisco_quote,
             "ciscoSo": sol.cisco_so,
-            "ciscoWebOrderFinal": sol.cisco_web_order_final
+            "ciscoWebOrderFinal": sol.cisco_web_order_final,
+            "detallesPrestamo": sol.detalles_prestamo
         })
     return resultado
 

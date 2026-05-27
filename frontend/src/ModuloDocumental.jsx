@@ -32,6 +32,10 @@ export default function ModuloDocumental({ intranet, usuarioCargo }) {
           procesosPermitidos.push('CX', 'Proyectos', 'Servicios');
         } else if (usuarioCargo && usuarioCargo.includes('Gerente de Ingenier')) {
           procesosPermitidos.push('Delivery');
+        } else if (usuarioCargo === 'Project Manager') {
+          procesosPermitidos.push('Proyectos');
+        } else if (['Service Delivery Manager', 'Líder SMO', 'Coordinador SDM'].includes(usuarioCargo)) {
+          procesosPermitidos.push('Servicios');
         } else {
           return false;
         }

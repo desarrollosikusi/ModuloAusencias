@@ -18,9 +18,11 @@ class SolicitudAdministrativaDB(Base):
     web_order = Column(String, nullable=True)
     deal_id = Column(String, nullable=True)
     ruta_cotizacion = Column(String, nullable=True)
+    detalles_prestamo = Column(String, nullable=True)
     
     estado = Column(String, default="Abierto")
     gestor = Column(String, nullable=True)
+    solicitante = Column(String, nullable=True)
     fecha_creacion = Column(DateTime, default=datetime.utcnow)
 
     # Campos de Gestión (Llenados por el Gestor Financiero)

@@ -3,9 +3,11 @@ import { Calendar, AlertCircle, CheckCircle, Clock, UserCircle, Briefcase, FileT
 import FormularioAusencia from './FormularioAusencia';
 import FormularioAdministrativa from './FormularioAdministrativa';
 import BandejaCompras from './BandejaCompras';
+import BandejaLogistica from './BandejaLogistica';
 import ModuloDocumental from './ModuloDocumental';
 import ModalDetalleSolicitud from './ModalDetalleSolicitud';
 import ModuloFinanciera from './ModuloFinanciera';
+import ModalContratoFirmado from './ModalContratoFirmado';
 
 const EQUIPOS = [
   "Administrativa", "Comercial", "Equipo Bancolombia", "Ingeniería Delivery", 
@@ -90,6 +92,7 @@ function App() {
   const [ausencias, setAusencias] = useState([]);
   const [solicitudesAdmin, setSolicitudesAdmin] = useState([]);
   const [selectedSolicitud, setSelectedSolicitud] = useState(null);
+  const [modalContratoFirmado, setModalContratoFirmado] = useState(null);
   const [peps, setPeps] = useState([]);
   
   const cargarPeps = () => {
@@ -122,6 +125,25 @@ function App() {
         cargarPeps();
       } else {
         alert("Error al asignar PM");
+      }
+    } catch (e) {
+      console.error(e);
+      alert("Error de conexión");
+    }
+  };
+
+  const handleEnviarContratoFirmado = async (id, formData) => {
+    try {
+      const res = await fetch(`http://localhost:8000/api/administrativa/${id}/contrato-firmado`, {
+        method: 'POST',
+        body: formData
+      });
+      if (res.ok) {
+        alert("¡Contrato firmado enviado con éxito!");
+        setModalContratoFirmado(null);
+        cargarAdministrativas();
+      } else {
+        alert("Error al enviar el contrato.");
       }
     } catch (e) {
       console.error(e);
@@ -397,6 +419,9 @@ function App() {
               <>
                 <button onClick={() => setActiveTab('mis-solicitudes')} className={`px-5 py-2.5 font-medium text-sm rounded-t-lg transition-all flex items-center gap-2 ${activeTab === 'mis-solicitudes' ? 'bg-slate-50 text-blue-700 border-t border-l border-r border-slate-200' : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50/80'}`}><Clock size={18}/> Mis Solicitudes</button>
                 <button onClick={() => setActiveTab('nueva-solicitud')} className={`px-5 py-2.5 font-medium text-sm rounded-t-lg transition-all flex items-center gap-2 ${activeTab === 'nueva-solicitud' ? 'bg-slate-50 text-blue-700 border-t border-l border-r border-slate-200' : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50/80'}`}><FileText size={18}/> Nueva solicitud</button>
+                {usuarioCargo === 'Project Manager' && (
+                  <button onClick={() => setActiveTab('solicitudes-pep')} className={`px-5 py-2.5 font-medium text-sm rounded-t-lg transition-all flex items-center gap-2 ${activeTab === 'solicitudes-pep' ? 'bg-slate-50 text-blue-700 border-t border-l border-r border-slate-200' : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50/80'}`}><Briefcase size={18}/> Solicitudes por PEP</button>
+                )}
                 <button onClick={() => setActiveTab('compras-pendientes')} className={`px-5 py-2.5 font-medium text-sm rounded-t-lg transition-all flex items-center gap-2 ${activeTab === 'compras-pendientes' ? 'bg-slate-50 text-blue-700 border-t border-l border-r border-slate-200' : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50/80'}`}><CreditCard size={18}/> Compras pendientes</button>
                 <button onClick={() => setActiveTab('facturacion-pendiente')} className={`px-5 py-2.5 font-medium text-sm rounded-t-lg transition-all flex items-center gap-2 ${activeTab === 'facturacion-pendiente' ? 'bg-slate-50 text-blue-700 border-t border-l border-r border-slate-200' : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50/80'}`}><FileText size={18}/> Facturación pendiente</button>
               </>
@@ -694,6 +719,7 @@ function App() {
           {currentModule === 'administrativa' && activeTab === 'nueva-solicitud' && (
             <div className="max-w-5xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
                <FormularioAdministrativa 
+                 peps={peps}
                  onCancel={() => setActiveTab('mis-solicitudes')}
                  onSubmit={async (data) => {
                    const form = new FormData();
@@ -702,6 +728,7 @@ function App() {
                        form.append(key, data[key]);
                      }
                    });
+                   form.append('solicitante', usuarioNombre);
                    
                    try {
                      const response = await fetch('http://localhost:8000/api/administrativa', {
@@ -744,15 +771,28 @@ function App() {
                   <thead className="bg-slate-50 border-b border-slate-200">
                     <tr>
                       <th className="px-6 py-4 font-semibold text-slate-600 text-sm text-center">Semáforo</th>
-                      <th className="px-6 py-4 font-semibold text-slate-600 text-sm">Tipo de solicitud</th>
-                      <th className="px-6 py-4 font-semibold text-slate-600 text-sm">PEP/CECO</th>
-                      <th className="px-6 py-4 font-semibold text-slate-600 text-sm">Gestor</th>
-                      <th className="px-6 py-4 font-semibold text-slate-600 text-sm">Tiempo en gestión</th>
+                      <th className="px-6 py-4 font-semibold text-slate-600 text-sm">PEP</th>
+                      <th className="px-6 py-4 font-semibold text-slate-600 text-sm">Cliente</th>
+                      <th className="px-6 py-4 font-semibold text-slate-600 text-sm">Tiempo en bandeja</th>
+                      <th className="px-6 py-4 font-semibold text-slate-600 text-sm">Estado</th>
+                      <th className="px-6 py-4 font-semibold text-slate-600 text-sm">Acciones</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {solicitudesAdmin.filter(s => s.estado !== 'Gestionado').length > 0 ? solicitudesAdmin.filter(s => s.estado !== 'Gestionado').map((s, i) => {
+                    {solicitudesAdmin.filter(s => s.solicitante === usuarioNombre).length > 0 ? solicitudesAdmin.filter(s => s.solicitante === usuarioNombre).map((s, i) => {
                       const dias = s.diasHabiles !== undefined ? s.diasHabiles : 0;
+                      
+                      let cliente = 'Sin especificar';
+                      try {
+                        const detalles = s.detalles_prestamo ? JSON.parse(s.detalles_prestamo) : null;
+                        if (detalles && detalles.clienteResponsable) {
+                          cliente = detalles.clienteResponsable.responsable;
+                        } else {
+                          const pepData = peps.find(p => p.pep === s.pep);
+                          if (pepData) cliente = pepData.proyecto;
+                        }
+                      } catch(e) {}
+
                       return (
                       <tr key={i} className="hover:bg-slate-50 transition">
                         <td className="px-6 py-4">
@@ -764,16 +804,28 @@ function App() {
                              />
                           </div>
                         </td>
-                        <td className="px-6 py-4 font-semibold text-slate-800 text-sm">{s.tipoSolicitud}</td>
-                        <td className="px-6 py-4 font-medium text-slate-700 text-sm">
-                           {s.tipoCompra === 'CECO' || s.ceco ? s.ceco : s.pep}
-                        </td>
-                        <td className="px-6 py-4 font-medium text-slate-700 text-sm">{s.gestor || 'Pendiente de asignación'}</td>
+                        <td className="px-6 py-4 font-semibold text-slate-800 text-sm">{s.pep}</td>
+                        <td className="px-6 py-4 font-medium text-slate-700 text-sm">{cliente}</td>
                         <td className="px-6 py-4 font-medium text-slate-700 text-sm">{dias} días hábiles</td>
+                        <td className="px-6 py-4">
+                          <span className={`px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800`}>
+                            {s.estado || 'Abierto'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          {s.estado === 'Pendiente firma contrato' && (
+                            <button 
+                              onClick={() => setModalContratoFirmado(s)}
+                              className="text-blue-600 hover:text-blue-800 font-medium text-sm flex items-center gap-1 border border-blue-200 px-3 py-1.5 rounded-lg hover:bg-blue-50 transition"
+                            >
+                              Gestionar
+                            </button>
+                          )}
+                        </td>
                       </tr>
                     )}) : (
                       <tr>
-                        <td colSpan="5" className="px-6 py-12 text-center text-slate-500">
+                        <td colSpan="6" className="px-6 py-12 text-center text-slate-500">
                           <CheckCircle size={48} className="mx-auto text-slate-300 mb-4 opacity-50"/>
                           <p>No tienes solicitudes administrativas registradas.</p>
                         </td>
@@ -811,43 +863,64 @@ function App() {
                   </thead>
                   <tbody className="divide-y divide-slate-100">
                     {peps
-                      .filter(p => p.observaciones === (activeTab === 'compras-pendientes' ? 'Compra anticipada' : 'Facturación anticipada') && p.pm === 'Pendiente por asignar PM')
-                      .map((p, i) => (
-                      <tr key={i} className="hover:bg-slate-50 transition">
-                        <td className="px-3 py-2 text-xs font-medium text-slate-800 whitespace-nowrap">{p.folio}</td>
-                        <td className="px-3 py-2 text-xs font-semibold text-blue-600 whitespace-nowrap">{p.codigo_pep}</td>
-                        <td className="px-3 py-2 text-xs text-slate-600 whitespace-nowrap truncate max-w-xs" title={p.cliente}>{p.cliente}</td>
-                        <td className="px-3 py-2 text-xs text-slate-600 whitespace-nowrap">{p.am}</td>
-                        <td className="px-3 py-2 text-xs text-slate-500 whitespace-nowrap">
-                          {new Date(p.fecha_creacion).toLocaleDateString()}
-                        </td>
-                        <td className="px-3 py-2 whitespace-nowrap">
-                          <select 
-                            className="border border-slate-300 rounded-lg px-2 py-1 text-xs focus:ring-2 focus:ring-blue-500 outline-none w-full bg-white"
-                            onChange={(e) => {
-                              if(e.target.value) asignarPM(p.id, e.target.value);
-                            }}
-                            defaultValue=""
-                          >
-                            <option value="" disabled>Asignar PM...</option>
-                            <option value="OFDQ">OFDQ - Project Manager</option>
-                            <option value="SLSC">SLSC - Project Manager</option>
-                            <option value="DKCC">DKCC - Project Manager</option>
-                            <option value="HDSH">HDSH - Project Manager</option>
-                            <option value="JASP">JASP - Project Manager</option>
-                            <option value="MSSL">MSSL - Project Manager</option>
-                            <option value="AMRV">AMRV - Service Delivery Manager</option>
-                            <option value="DALB">DALB - Líder SMO</option>
-                            <option value="IDGG">IDGG - Service Delivery Manager</option>
-                            <option value="LELD">LELD - Coordinador SDM</option>
-                          </select>
-                        </td>
-                      </tr>
-                    ))}
-                    {peps.filter(p => p.observaciones === (activeTab === 'compras-pendientes' ? 'Compra anticipada' : 'Facturación anticipada') && p.pm === 'Pendiente por asignar PM').length === 0 && (
+                      .filter(p => {
+                        const matchObs = p.observaciones === (activeTab === 'compras-pendientes' ? 'Compra anticipada' : 'Facturación anticipada');
+                        if (!matchObs) return false;
+                        const isManager = ['Director de Operaciones', 'Gerente de Proyectos y Servicios', 'Coordinadora Operativa'].includes(usuarioCargo);
+                        if (isManager) {
+                          return p.pm === 'Pendiente por asignar PM' || p.pm === usuarioNombre;
+                        }
+                        return p.pm === usuarioNombre;
+                      })
+                      .map((p, i) => {
+                        const isManager = ['Director de Operaciones', 'Gerente de Proyectos y Servicios', 'Coordinadora Operativa'].includes(usuarioCargo);
+                        return (
+                        <tr key={i} className="hover:bg-slate-50 transition">
+                          <td className="px-3 py-2 text-xs font-medium text-slate-800 whitespace-nowrap">{p.folio}</td>
+                          <td className="px-3 py-2 text-xs font-semibold text-blue-600 whitespace-nowrap">{p.codigo_pep}</td>
+                          <td className="px-3 py-2 text-xs text-slate-600 whitespace-nowrap truncate max-w-xs" title={p.cliente}>{p.cliente}</td>
+                          <td className="px-3 py-2 text-xs text-slate-600 whitespace-nowrap">{p.am}</td>
+                          <td className="px-3 py-2 text-xs text-slate-500 whitespace-nowrap">
+                            {new Date(p.fecha_creacion).toLocaleDateString()}
+                          </td>
+                          <td className="px-3 py-2 whitespace-nowrap">
+                            {isManager && p.pm === 'Pendiente por asignar PM' ? (
+                              <select 
+                                key={`pm-select-${p.id}`}
+                                className="border border-slate-300 rounded-lg px-2 py-1 text-xs focus:ring-2 focus:ring-blue-500 outline-none w-full bg-white"
+                                onChange={(e) => {
+                                  if(e.target.value) asignarPM(p.id, e.target.value);
+                                }}
+                                value=""
+                              >
+                                <option value="" disabled>Asignar PM...</option>
+                                <option value="OFDQ">OFDQ - Project Manager</option>
+                                <option value="SLSC">SLSC - Project Manager</option>
+                                <option value="DKCC">DKCC - Project Manager</option>
+                                <option value="HDSH">HDSH - Project Manager</option>
+                                <option value="JASP">JASP - Project Manager</option>
+                                <option value="MSSL">MSSL - Project Manager</option>
+                                <option value="AMRV">AMRV - Service Delivery Manager</option>
+                                <option value="DALB">DALB - Líder SMO</option>
+                                <option value="IDGG">IDGG - Service Delivery Manager</option>
+                                <option value="LELD">LELD - Coordinador SDM</option>
+                              </select>
+                            ) : (
+                              <span className="text-xs font-medium text-slate-700 bg-slate-100 px-2 py-1 rounded">{p.pm}</span>
+                            )}
+                          </td>
+                        </tr>
+                      )})}
+                    {peps.filter(p => {
+                      const matchObs = p.observaciones === (activeTab === 'compras-pendientes' ? 'Compra anticipada' : 'Facturación anticipada');
+                      if (!matchObs) return false;
+                      const isManager = ['Director de Operaciones', 'Gerente de Proyectos y Servicios', 'Coordinadora Operativa'].includes(usuarioCargo);
+                      if (isManager) return p.pm === 'Pendiente por asignar PM' || p.pm === usuarioNombre;
+                      return p.pm === usuarioNombre;
+                    }).length === 0 && (
                       <tr>
                         <td colSpan="6" className="px-6 py-8 text-center text-slate-400">
-                          No hay proyectos pendientes de asignación en esta bandeja.
+                          No hay proyectos pendientes o asignados a ti en esta bandeja.
                         </td>
                       </tr>
                     )}
@@ -875,12 +948,21 @@ function App() {
             />
           )}
 
-          {['facturacion', 'logistica'].includes(currentModule) && (
+          {currentModule === 'facturacion' && (
              <div className="flex flex-col items-center justify-center py-20 text-slate-400 bg-white rounded-xl border border-slate-200 shadow-sm mt-8">
                <CreditCard size={64} className="mb-4 opacity-30 text-blue-600"/>
                <h2 className="text-2xl font-bold text-slate-700">Módulo Exclusivo Financiero</h2>
                <p className="mt-2 text-slate-500 text-center max-w-md">Estás simulando la Intranet de la Dirección Financiera con el rol de <strong>{perfil}</strong>.</p>
              </div>
+          )}
+
+          {currentModule === 'logistica' && (
+            <BandejaLogistica 
+              solicitudes={solicitudesAdmin.filter(s => s.tipoSolicitud === 'Contrato préstamo de equipos')} 
+              perfilActual={perfil} 
+              usuarioActual={usuarioNombre}
+              onSolicitudActualizada={cargarAdministrativas}
+            />
           )}
 
           {currentModule === 'financiera' && (
@@ -895,6 +977,13 @@ function App() {
             isOpen={!!selectedSolicitud} 
             onClose={() => setSelectedSolicitud(null)} 
             solicitud={selectedSolicitud} 
+          />
+
+          <ModalContratoFirmado
+            isOpen={!!modalContratoFirmado}
+            onClose={() => setModalContratoFirmado(null)}
+            solicitud={modalContratoFirmado}
+            onEnviarContrato={handleEnviarContratoFirmado}
           />
 
         </div>
