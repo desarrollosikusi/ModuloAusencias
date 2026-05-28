@@ -8,6 +8,7 @@ import ModuloDocumental from './ModuloDocumental';
 import ModalDetalleSolicitud from './ModalDetalleSolicitud';
 import ModuloFinanciera from './ModuloFinanciera';
 import ModalContratoFirmado from './ModalContratoFirmado';
+import ModalEnviarCorreoCliente from './ModalEnviarCorreoCliente';
 
 const EQUIPOS = [
   "Administrativa", "Comercial", "Equipo Bancolombia", "Ingeniería Delivery", 
@@ -93,6 +94,7 @@ function App() {
   const [solicitudesAdmin, setSolicitudesAdmin] = useState([]);
   const [selectedSolicitud, setSelectedSolicitud] = useState(null);
   const [modalContratoFirmado, setModalContratoFirmado] = useState(null);
+  const [modalEnviarCorreo, setModalEnviarCorreo] = useState(null);
   const [peps, setPeps] = useState([]);
   const [solicitudEnAjuste, setSolicitudEnAjuste] = useState(null);
   
@@ -148,6 +150,25 @@ function App() {
       }
     } catch (e) {
       console.error(e);
+      alert("Error de conexión");
+    }
+  };
+
+  const handleEnviarCorreo = async (id, data) => {
+    try {
+      const res = await fetch(`http://localhost:8000/api/logistica/${id}/estado`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      if (res.ok) {
+        setModalEnviarCorreo(null);
+        cargarAdministrativas();
+      } else {
+        alert("Error al actualizar la solicitud.");
+      }
+    } catch (error) {
+      console.error(error);
       alert("Error de conexión");
     }
   };
@@ -844,17 +865,39 @@ function App() {
                           </span>
                         </td>
                         <td className="px-6 py-4">
-                          {s.estado === 'Pendiente firma contrato' && (
-                            <button 
-                              onClick={() => setModalContratoFirmado(s)}
-                              className="text-blue-600 hover:text-blue-800 font-medium text-sm flex items-center gap-1 border border-blue-200 px-3 py-1.5 rounded-lg hover:bg-blue-50 transition"
-                            >
-                              Gestionar
-                            </button>
-                          )}
-                          {s.estado === 'Observado' && (
-                            <button 
-                              onClick={() => {
+                          <div className="flex justify-center items-center w-full">
+                            {s.estado && s.estado.includes('firma contrato') && (
+                              <button 
+                                onClick={() => setModalEnviarCorreo(s)}
+                                className="text-blue-600 hover:text-blue-800 font-medium text-sm flex items-center gap-1 border border-blue-200 px-3 py-1.5 rounded-lg hover:bg-blue-50 transition"
+                              >
+                                Gestionar
+                              </button>
+                            )}
+                            {s.estado && s.estado.includes('gesti\u00F3n de firmas') && (
+                              <button 
+                                onClick={() => setModalContratoFirmado(s)}
+                                className="text-blue-600 hover:text-blue-800 font-medium text-sm flex items-center gap-1 border border-blue-200 px-3 py-1.5 rounded-lg hover:bg-blue-50 transition"
+                              >
+                                Gestionar
+                              </button>
+                            )}
+                            {s.estado === 'Ajustado' && (
+                              <button className="text-slate-400 font-medium text-sm border border-slate-200 px-3 py-1.5 rounded-lg bg-slate-50 cursor-not-allowed">
+                                En revisi\u00F3n
+                              </button>
+                            )}
+                            {(!s.estado || (!s.estado.includes('firma contrato') && !s.estado.includes('gesti\u00F3n de firmas') && s.estado !== 'Ajustado' && s.estado !== 'Gestionado' && s.estado !== 'Observado')) && (
+                              <button 
+                                onClick={() => setSelectedSolicitud(s)}
+                                className="text-slate-600 hover:text-slate-800 font-medium text-sm flex items-center gap-1 border border-slate-200 px-3 py-1.5 rounded-lg hover:bg-slate-50 transition"
+                              >
+                                Ver Detalles
+                              </button>
+                            )}
+                            {s.estado === 'Observado' && (
+                              <button 
+                                onClick={() => {
                                 setSolicitudEnAjuste(s);
                                 setActiveTab('nueva-solicitud');
                               }}
@@ -863,6 +906,7 @@ function App() {
                               Ajustar
                             </button>
                           )}
+                          </div>
                         </td>
                       </tr>
                     )}) : (
@@ -1102,6 +1146,13 @@ function App() {
             onClose={() => setModalContratoFirmado(null)}
             solicitud={modalContratoFirmado}
             onEnviarContrato={handleEnviarContratoFirmado}
+          />
+          
+          <ModalEnviarCorreoCliente
+            isOpen={!!modalEnviarCorreo}
+            onClose={() => setModalEnviarCorreo(null)}
+            solicitud={modalEnviarCorreo}
+            onEnviar={handleEnviarCorreo}
           />
 
         </div>

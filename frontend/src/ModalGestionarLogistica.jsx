@@ -137,7 +137,7 @@ export default function ModalGestionarLogistica({ isOpen, onClose, solicitud, us
 
   const handleRemitirContrato = () => {
     const data = {
-      estado: 'Gestionado',
+      estado: 'Pendiente firma contrato',
       gestorLogistica: usuarioActual
     };
     onGestionar(solicitud.id, data);
