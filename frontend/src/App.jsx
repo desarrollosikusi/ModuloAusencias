@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, AlertCircle, CheckCircle, Clock, UserCircle, Briefcase, FileText, LayoutDashboard, Users, ArrowRight, CreditCard, Truck, TrendingUp, Building, BookOpen } from 'lucide-react';
+import { Calendar, AlertCircle, CheckCircle, Clock, UserCircle, Briefcase, FileText, LayoutDashboard, Users, ArrowRight, CreditCard, Truck, TrendingUp, Building, BookOpen, List } from 'lucide-react';
 import FormularioAusencia from './FormularioAusencia';
 import FormularioAdministrativa from './FormularioAdministrativa';
 import BandejaCompras from './BandejaCompras';
@@ -94,6 +94,7 @@ function App() {
   const [selectedSolicitud, setSelectedSolicitud] = useState(null);
   const [modalContratoFirmado, setModalContratoFirmado] = useState(null);
   const [peps, setPeps] = useState([]);
+  const [solicitudEnAjuste, setSolicitudEnAjuste] = useState(null);
   
   const cargarPeps = () => {
     fetch('http://localhost:8000/api/peps')
@@ -155,6 +156,27 @@ function App() {
     if (dias <= 2) return 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]';
     if (dias <= 5) return 'bg-orange-500 shadow-[0_0_8px_rgba(249,115,22,0.6)]';
     return 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)]';
+  };
+
+  const isNearExpiration = (fechaFinStr) => {
+    if (!fechaFinStr) return false;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const [y, m, d] = fechaFinStr.split('-');
+    const endDate = new Date(y, m - 1, d);
+    if (endDate < today) return true;
+
+    let count = 0;
+    let cur = new Date(today);
+    cur.setDate(cur.getDate() + 1);
+    while (cur <= endDate) {
+      const day = cur.getDay();
+      if (day !== 0 && day !== 6) {
+        count++;
+      }
+      cur.setDate(cur.getDate() + 1);
+    }
+    return count <= 5;
   };
   
   // ESTADOS DE ARQUITECTURA (NUEVOS)
@@ -719,8 +741,12 @@ function App() {
           {currentModule === 'administrativa' && activeTab === 'nueva-solicitud' && (
             <div className="max-w-5xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
                <FormularioAdministrativa 
-                 peps={peps}
-                 onCancel={() => setActiveTab('mis-solicitudes')}
+                 peps={peps.filter(p => p.pm === usuarioNombre)}
+                 solicitudToEdit={solicitudEnAjuste}
+                 onCancel={() => {
+                   setActiveTab('mis-solicitudes');
+                   setSolicitudEnAjuste(null);
+                 }}
                  onSubmit={async (data) => {
                    const form = new FormData();
                    Object.keys(data).forEach(key => {
@@ -731,14 +757,19 @@ function App() {
                    form.append('solicitante', usuarioNombre);
                    
                    try {
-                     const response = await fetch('http://localhost:8000/api/administrativa', {
-                       method: 'POST',
+                     const isEditing = !!solicitudEnAjuste;
+                     const url = isEditing 
+                       ? `http://localhost:8000/api/administrativa/${solicitudEnAjuste.id}`
+                       : 'http://localhost:8000/api/administrativa';
+                       
+                     const response = await fetch(url, {
+                       method: isEditing ? 'PUT' : 'POST',
                        body: form
                      });
                      if(response.ok) {
-                       const nuevaSol = await response.json();
-                       setSolicitudesAdmin(prev => [nuevaSol, ...prev]);
-                       alert("Solicitud enviada y guardada en Base de Datos.");
+                       await cargarAdministrativas();
+                       alert(isEditing ? 'Solicitud ajustada con éxito' : 'Solicitud creada con éxito');
+                       setSolicitudEnAjuste(null);
                        setActiveTab('mis-solicitudes');
                      } else {
                        alert("Error al enviar la solicitud.");
@@ -798,7 +829,7 @@ function App() {
                         <td className="px-6 py-4">
                           <div className="flex justify-center">
                              <div 
-                               className={`w-4 h-4 rounded-full cursor-pointer hover:scale-150 transition-all ${getSemaforoColor(dias)}`} 
+                               className={`w-4 h-4 rounded-full cursor-pointer hover:scale-150 transition-all ${s.estado === 'Observado' ? 'bg-red-600 shadow-[0_0_8px_rgba(220,38,38,0.8)] animate-pulse' : getSemaforoColor(dias)}`} 
                                title="Haz clic para ver detalles" 
                                onClick={() => setSelectedSolicitud(s)}
                              />
@@ -808,7 +839,7 @@ function App() {
                         <td className="px-6 py-4 font-medium text-slate-700 text-sm">{cliente}</td>
                         <td className="px-6 py-4 font-medium text-slate-700 text-sm">{dias} días hábiles</td>
                         <td className="px-6 py-4">
-                          <span className={`px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800`}>
+                          <span className={`px-3 py-1 rounded-full text-xs font-medium ${s.estado === 'Observado' ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'}`}>
                             {s.estado || 'Abierto'}
                           </span>
                         </td>
@@ -819,6 +850,17 @@ function App() {
                               className="text-blue-600 hover:text-blue-800 font-medium text-sm flex items-center gap-1 border border-blue-200 px-3 py-1.5 rounded-lg hover:bg-blue-50 transition"
                             >
                               Gestionar
+                            </button>
+                          )}
+                          {s.estado === 'Observado' && (
+                            <button 
+                              onClick={() => {
+                                setSolicitudEnAjuste(s);
+                                setActiveTab('nueva-solicitud');
+                              }}
+                              className="text-red-600 hover:text-red-800 font-medium text-sm flex items-center gap-1 border border-red-200 px-3 py-1.5 rounded-lg hover:bg-red-50 transition"
+                            >
+                              Ajustar
                             </button>
                           )}
                         </td>
@@ -930,7 +972,83 @@ function App() {
             </div>
           )}
 
-          {currentModule === 'administrativa' && activeTab !== 'nueva-solicitud' && activeTab !== 'mis-solicitudes' && activeTab !== 'compras-pendientes' && activeTab !== 'facturacion-pendiente' && (
+          {currentModule === 'administrativa' && activeTab === 'solicitudes-pep' && (
+            <div className="max-w-6xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm mb-6 flex items-center justify-between">
+                <div>
+                  <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+                    <List size={24} className="text-blue-600"/> Solicitudes por PEP (Project Manager)
+                  </h2>
+                  <p className="text-sm text-slate-500 mt-1">
+                    Visualiza las solicitudes administrativas vinculadas a tus proyectos asignados.
+                  </p>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                <table className="w-full text-left">
+                  <thead className="bg-slate-50 border-b border-slate-200">
+                    <tr>
+                      <th className="px-6 py-4 font-semibold text-slate-600 text-sm">PEP</th>
+                      <th className="px-6 py-4 font-semibold text-slate-600 text-sm">Solicitante</th>
+                      <th className="px-6 py-4 font-semibold text-slate-600 text-sm">Tipo Solicitud</th>
+                      <th className="px-6 py-4 font-semibold text-slate-600 text-sm">Fecha Solicitud</th>
+                      <th className="px-6 py-4 font-semibold text-slate-600 text-sm">Estado</th>
+                      <th className="px-6 py-4 font-semibold text-slate-600 text-sm">Alertas Préstamos</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {solicitudesAdmin.filter(s => {
+                      const pepObj = peps.find(p => p.codigo_pep === s.pep || p.folio === s.pep);
+                      return pepObj && pepObj.pm === usuarioNombre;
+                    }).length > 0 ? (
+                      solicitudesAdmin.filter(s => {
+                        const pepObj = peps.find(p => p.codigo_pep === s.pep || p.folio === s.pep);
+                        return pepObj && pepObj.pm === usuarioNombre;
+                      }).map((s, i) => {
+                        let alerta = null;
+                        if (s.tipoSolicitud === "Contrato préstamo de equipos" && s.detalles_prestamo) {
+                          try {
+                            const det = JSON.parse(s.detalles_prestamo);
+                            if (det.equipos && det.equipos.length > 0) {
+                              const minFechaFin = det.equipos.map(e => e.fechaFin).sort()[0];
+                              if (isNearExpiration(minFechaFin)) {
+                                alerta = <span className="px-2 py-1 bg-red-100 text-red-700 text-[10px] font-bold rounded-full uppercase tracking-wider animate-pulse">¡Por vencer!</span>;
+                              }
+                            }
+                          } catch(e) {}
+                        }
+                        return (
+                        <tr key={i} className="hover:bg-slate-50 transition">
+                          <td className="px-6 py-4 font-medium text-blue-600 text-sm">{s.pep}</td>
+                          <td className="px-6 py-4 font-medium text-slate-800 text-sm">{s.solicitante}</td>
+                          <td className="px-6 py-4 text-slate-700 text-sm">{s.tipoSolicitud}</td>
+                          <td className="px-6 py-4 text-slate-500 text-sm">{new Date(s.fecha_creacion).toLocaleDateString()}</td>
+                          <td className="px-6 py-4">
+                            <span className="px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                              {s.estado || 'Abierto'}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4">
+                            {alerta}
+                          </td>
+                        </tr>
+                      )})
+                    ) : (
+                      <tr>
+                        <td colSpan="6" className="px-6 py-12 text-center text-slate-500">
+                          <CheckCircle size={48} className="mx-auto text-slate-300 mb-4 opacity-50"/>
+                          <p>No hay solicitudes vinculadas a tus PEPs.</p>
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {currentModule === 'administrativa' && activeTab !== 'nueva-solicitud' && activeTab !== 'mis-solicitudes' && activeTab !== 'compras-pendientes' && activeTab !== 'facturacion-pendiente' && activeTab !== 'solicitudes-pep' && (
              <div className="flex flex-col items-center justify-center py-20 text-slate-400">
                <Building size={64} className="mb-4 opacity-50"/>
                <h2 className="text-2xl font-bold text-slate-500">Bandeja: {activeTab.replace(/-/g, ' ').toUpperCase()}</h2>
@@ -941,7 +1059,7 @@ function App() {
           {/* === MÓDULOS INTRANET FINANCIERA === */}
           {currentModule === 'compras' && (
             <BandejaCompras 
-              solicitudes={solicitudesAdmin.filter(s => s.tipoSolicitud === 'Compra')} 
+              solicitudes={solicitudesAdmin.filter(s => s.tipoSolicitud === 'Compra' || s.tipoSolicitud === 'Cotización')} 
               perfilActual={perfil} 
               usuarioActual={usuarioNombre}
               onSolicitudActualizada={cargarAdministrativas}

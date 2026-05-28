@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Truck, CheckCircle, List, Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Truck, CheckCircle, List, Calendar, ChevronLeft, ChevronRight, AlertTriangle } from 'lucide-react';
 import ModalDetalleSolicitud from './ModalDetalleSolicitud';
 import ModalGestionarLogistica from './ModalGestionarLogistica';
 
@@ -9,6 +9,27 @@ export default function BandejaLogistica({ solicitudes, perfilActual, usuarioAct
   const [activeTab, setActiveTab] = useState('bandeja');
   const [currentDate, setCurrentDate] = useState(new Date());
   const [calendarView, setCalendarView] = useState('mensual');
+
+  const isNearExpiration = (fechaFinStr) => {
+    if (!fechaFinStr) return false;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const [y, m, d] = fechaFinStr.split('-');
+    const endDate = new Date(y, m - 1, d);
+    if (endDate < today) return true; 
+
+    let count = 0;
+    let cur = new Date(today);
+    cur.setDate(cur.getDate() + 1);
+    while (cur <= endDate) {
+      const day = cur.getDay();
+      if (day !== 0 && day !== 6) {
+        count++;
+      }
+      cur.setDate(cur.getDate() + 1);
+    }
+    return count <= 5;
+  };
 
   const equiposPrestados = [];
   solicitudes.forEach(sol => {
@@ -264,12 +285,17 @@ export default function BandejaLogistica({ solicitudes, perfilActual, usuarioAct
     return 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)]';
   };
 
-  const handleGestionar = async (id, formData) => {
+  const handleGestionar = async (id, data) => {
     try {
-      const response = await fetch(`http://localhost:8000/api/logistica/${id}/gestionar`, {
-        method: 'POST',
-        body: formData
-      });
+      const isFormData = data instanceof FormData;
+      const url = `http://localhost:8000/api/logistica/${id}/${isFormData ? 'gestionar' : 'estado'}`;
+      const options = {
+        method: isFormData ? 'POST' : 'PUT',
+        headers: isFormData ? {} : { 'Content-Type': 'application/json' },
+        body: isFormData ? data : JSON.stringify(data)
+      };
+      
+      const response = await fetch(url, options);
       if(response.ok) {
         alert("¡Solicitud gestionada exitosamente!");
         setModalGestion(null);
@@ -296,7 +322,7 @@ export default function BandejaLogistica({ solicitudes, perfilActual, usuarioAct
           </p>
         </div>
         <div className="bg-blue-50 text-blue-700 px-4 py-2 rounded-lg font-bold">
-          {solicitudes.filter(s => s.estado === 'Abierto' || s.estado === 'Sin gestionar' || s.estado === 'Pendiente envío equipos').length} Pendientes
+          {solicitudes.filter(s => s.estado === 'Abierto' || s.estado === 'Sin gestionar' || s.estado === 'Pendiente envío equipos' || s.estado === 'Ajustado').length} Pendientes
         </div>
       </div>
 
@@ -336,8 +362,8 @@ export default function BandejaLogistica({ solicitudes, perfilActual, usuarioAct
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {solicitudes.filter(s => s.estado === 'Abierto' || s.estado === 'Sin gestionar' || s.estado === 'Pendiente envío equipos').length > 0 ? (
-              solicitudes.filter(s => s.estado === 'Abierto' || s.estado === 'Sin gestionar' || s.estado === 'Pendiente envío equipos').map((sol, index) => {
+            {solicitudes.filter(s => s.estado === 'Abierto' || s.estado === 'Sin gestionar' || s.estado === 'Pendiente envío equipos' || s.estado === 'Ajustado').length > 0 ? (
+              solicitudes.filter(s => s.estado === 'Abierto' || s.estado === 'Sin gestionar' || s.estado === 'Pendiente envío equipos' || s.estado === 'Ajustado').map((sol, index) => {
                 const dias = sol.diasHabiles !== undefined ? sol.diasHabiles : 0; 
                 let destino = 'Sin especificar';
                 if (sol.detalles_prestamo) {
@@ -363,10 +389,13 @@ export default function BandejaLogistica({ solicitudes, perfilActual, usuarioAct
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="font-semibold text-slate-800 text-sm">
+                      <div className="font-semibold text-slate-800 text-sm flex items-center gap-2">
                         {sol.pep || 'N/A'}
+                        {sol.estado === 'Ajustado' && (
+                          <span className="bg-orange-100 text-orange-700 text-[10px] font-bold px-2 py-0.5 rounded-full inline-block">Ajustado</span>
+                        )}
                       </div>
-                      <div className="text-xs text-slate-500">{sol.tipoSolicitud}</div>
+                      <div className="text-xs text-slate-500 mt-0.5">{sol.tipoSolicitud}</div>
                     </td>
                     <td className="px-6 py-4">
                       <div className="font-semibold text-slate-800 text-sm">{sol.solicitante || 'Juan Perez'}</div>
@@ -428,7 +457,14 @@ export default function BandejaLogistica({ solicitudes, perfilActual, usuarioAct
                   <td className="px-6 py-4 font-medium text-slate-800 text-sm">{eq.referencia}</td>
                   <td className="px-6 py-4 text-slate-500 text-sm">{eq.serial}</td>
                   <td className="px-6 py-4 text-slate-700 text-sm">{eq.fechaInicio}</td>
-                  <td className="px-6 py-4 text-slate-700 text-sm">{eq.fechaFin}</td>
+                  <td className="px-6 py-4 text-slate-700 text-sm">
+                    {eq.fechaFin}
+                    {isNearExpiration(eq.fechaFin) && (
+                      <span className="ml-2 px-2 py-0.5 bg-red-100 text-red-700 font-bold text-[10px] rounded-full uppercase tracking-wider animate-pulse">
+                        ¡Por vencer!
+                      </span>
+                    )}
+                  </td>
                   <td className="px-6 py-4">
                     <span className="px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                       {eq.estado}

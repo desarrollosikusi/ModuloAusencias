@@ -195,6 +195,86 @@ def crear_solicitud_admin(
         "detallesPrestamo": db_solicitud.detalles_prestamo
     }
 
+@app.put("/api/administrativa/{solicitud_id}", response_model=SolicitudAdminResponse)
+def actualizar_solicitud_admin(
+    solicitud_id: int,
+    tipoSolicitud: str = Form(...),
+    tipoCompra: Optional[str] = Form(None),
+    pep: Optional[str] = Form(None),
+    ceco: Optional[str] = Form(None),
+    proveedor: Optional[str] = Form(None),
+    monto: Optional[float] = Form(None),
+    moneda: Optional[str] = Form(None),
+    compraPlaneada: Optional[str] = Form(None),
+    observaciones: Optional[str] = Form(None),
+    webOrder: Optional[str] = Form(None),
+    dealId: Optional[str] = Form(None),
+    solicitante: Optional[str] = Form(None),
+    detallesPrestamo: Optional[str] = Form(None),
+    cotizacion: Optional[UploadFile] = File(None),
+    db: Session = Depends(get_db)
+):
+    solicitud = db.query(SolicitudAdministrativaDB).filter(SolicitudAdministrativaDB.id == solicitud_id).first()
+    if not solicitud:
+        return {"error": "No encontrada"}
+
+    if cotizacion:
+        filename = f"{datetime.utcnow().timestamp()}_{cotizacion.filename}"
+        filepath = os.path.join(UPLOAD_DIR, filename)
+        with open(filepath, "wb") as buffer:
+            shutil.copyfileobj(cotizacion.file, buffer)
+        solicitud.ruta_cotizacion = filepath
+
+    solicitud.tipo_solicitud = tipoSolicitud
+    solicitud.tipo_compra = tipoCompra
+    solicitud.pep = pep
+    solicitud.ceco = ceco
+    solicitud.proveedor = proveedor
+    solicitud.monto = monto
+    solicitud.moneda = moneda
+    solicitud.compra_planeada = compraPlaneada
+    solicitud.observaciones = observaciones
+    solicitud.web_order = webOrder
+    solicitud.deal_id = dealId
+    if detallesPrestamo:
+        solicitud.detalles_prestamo = detallesPrestamo
+    if solicitante:
+        solicitud.solicitante = solicitante
+
+    solicitud.estado = "Ajustado"
+
+    db.commit()
+    db.refresh(solicitud)
+    
+    return {
+        "id": solicitud.id,
+        "tipoSolicitud": solicitud.tipo_solicitud,
+        "tipoCompra": solicitud.tipo_compra,
+        "pep": solicitud.pep,
+        "ceco": solicitud.ceco,
+        "proveedor": solicitud.proveedor,
+        "monto": solicitud.monto,
+        "moneda": solicitud.moneda,
+        "compraPlaneada": solicitud.compra_planeada,
+        "observaciones": solicitud.observaciones,
+        "webOrder": solicitud.web_order,
+        "dealId": solicitud.deal_id,
+        "estado": solicitud.estado,
+        "gestor": solicitud.gestor,
+        "solicitante": solicitud.solicitante,
+        "diasHabiles": calcular_dias_habiles(solicitud.fecha_creacion, solicitud.fecha_cierre),
+        "rutaCotizacion": solicitud.ruta_cotizacion,
+        "fechaCierre": str(solicitud.fecha_cierre) if solicitud.fecha_cierre else None,
+        "fechaOrdenCompra": str(solicitud.fecha_orden_compra) if solicitud.fecha_orden_compra else None,
+        "ordenCompra": solicitud.orden_compra,
+        "valorFinal": solicitud.valor_final,
+        "monedaFinal": solicitud.moneda_final,
+        "ciscoQuote": solicitud.cisco_quote,
+        "ciscoSo": solicitud.cisco_so,
+        "ciscoWebOrderFinal": solicitud.cisco_web_order_final,
+        "detallesPrestamo": solicitud.detalles_prestamo
+    }
+
 @app.put("/api/administrativa/{solicitud_id}/gestionar", response_model=SolicitudAdminResponse)
 def gestionar_solicitud(solicitud_id: int, datos: SolicitudAdminGestionar, db: Session = Depends(get_db)):
     solicitud = db.query(SolicitudAdministrativaDB).filter(SolicitudAdministrativaDB.id == solicitud_id).first()
@@ -248,6 +328,30 @@ def gestionar_solicitud(solicitud_id: int, datos: SolicitudAdminGestionar, db: S
 
 import json
 
+class LogisticaEstadoUpdate(BaseModel):
+    estado: str
+    observacionesLogistica: Optional[str] = None
+    gestorLogistica: Optional[str] = None
+
+@app.put("/api/logistica/{solicitud_id}/estado")
+def actualizar_estado_logistica(solicitud_id: int, datos: LogisticaEstadoUpdate, db: Session = Depends(get_db)):
+    solicitud = db.query(SolicitudAdministrativaDB).filter(SolicitudAdministrativaDB.id == solicitud_id).first()
+    if not solicitud:
+        return {"error": "No encontrada"}
+
+    solicitud.estado = datos.estado
+    
+    detalles = json.loads(solicitud.detalles_prestamo) if solicitud.detalles_prestamo else {}
+    if datos.observacionesLogistica:
+        detalles["observacionesLogistica"] = datos.observacionesLogistica
+    if datos.gestorLogistica:
+        detalles["gestorLogistica"] = datos.gestorLogistica
+        
+    solicitud.detalles_prestamo = json.dumps(detalles)
+    
+    db.commit()
+    db.refresh(solicitud)
+    return {"status": "ok"}
 @app.post("/api/logistica/{solicitud_id}/gestionar")
 def gestionar_logistica(
     solicitud_id: int,

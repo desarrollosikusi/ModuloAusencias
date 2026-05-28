@@ -65,7 +65,10 @@ export default function FormularioAusencia({ onCancel, onSubmit }) {
   const isOperacionCritica = formData.actividadesCriticas.includes("Atención cliente") || 
                              formData.actividadesCriticas.includes("Proyecto crítico");
   
-  const requiresAdjunto = formData.tipoAusencia === "Incapacidad por enfermedad general";
+  const requiresAdjunto = ['Incapacidad por enfermedad general', 'Licencias'].includes(formData.tipoAusencia);
+
+  const isDiaCompletoVisible = formData.tipoAusencia === 'Ausencias Operativas Especiales' || 
+                               (formData.tipoAusencia === 'Licencias' && formData.tipoLicencia === 'Licencia para sufragio');
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -230,10 +233,12 @@ export default function FormularioAusencia({ onCancel, onSubmit }) {
           </div>
 
           <div className="flex items-center gap-6 mb-6">
-            <label className="flex items-center gap-2 text-sm text-slate-700 font-medium cursor-pointer">
-              <input type="checkbox" name="diaCompleto" checked={formData.diaCompleto} onChange={handleChange} className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"/>
-              Día Completo
-            </label>
+            {isDiaCompletoVisible && (
+              <label className="flex items-center gap-2 text-sm text-slate-700 font-medium cursor-pointer">
+                <input type="checkbox" name="diaCompleto" checked={formData.diaCompleto} onChange={handleChange} className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"/>
+                Día Completo
+              </label>
+            )}
             <label className="flex items-center gap-2 text-sm text-slate-700 font-medium cursor-pointer">
               <input type="checkbox" name="incluyeNoHabiles" checked={formData.incluyeNoHabiles} onChange={handleChange} className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"/>
               Incluye Días No Hábiles (Fines de semana/Festivos)
@@ -261,12 +266,7 @@ export default function FormularioAusencia({ onCancel, onSubmit }) {
           <h3 className="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
             <FileText size={20} className="text-blue-600"/> 3. Justificación y Soporte
           </h3>
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-slate-700 mb-2">Motivo de la ausencia *</label>
-            <textarea name="motivo" value={formData.motivo} onChange={handleChange} required rows="3"
-              className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none resize-none"
-              placeholder="Explica brevemente la razón de la solicitud..."></textarea>
-          </div>
+
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
